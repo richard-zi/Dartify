@@ -1,0 +1,36 @@
+src/
+├── components/
+│   ├── camera/
+│   │   ├── CameraView.tsx
+│   │   └── CameraControls.tsx
+│   ├── dartboard/
+│   │   ├── DartBoard.tsx
+│   │   └── DartBoardSection.tsx
+│   ├── game/
+│   │   ├── GameControls.tsx
+│   │   ├── PlayerCard.tsx
+│   │   ├── ScoreBoard.tsx
+│   │   └── ScoreInput.tsx
+│   ├── layout/
+│   │   ├── Header.tsx
+│   │   └── Layout.tsx
+│   └── ui/
+│       ├── Button.tsx
+│       └── Modal.tsx
+├── contexts/
+│   └── GameContext.tsx
+├── hooks/
+│   └── useCamera.tsx
+├── pages/
+│   ├── GamePage.tsx
+│   ├── HomePage.tsx
+│   └── PlayerSetupPage.tsx
+├── types/
+│   └── index.ts
+├── utils/
+│   ├── dartLogic.ts
+│   └── scoreCalculation.ts
+├── App.css
+├── App.tsx
+├── index.css
+└── main.tsx
