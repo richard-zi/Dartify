@@ -8,7 +8,11 @@ interface DartBoardSectionProps {
   innerRadius: number;
   outerRadius: number;
   fill: string;
+  stroke?: string;
+  strokeWidth?: number;
+  textureId?: string;
   highlighted?: boolean;
+  highlightColor?: string;
   onClick?: () => void;
   interactive?: boolean;
 }
@@ -21,16 +25,20 @@ const DartBoardSection: React.FC<DartBoardSectionProps> = ({
   innerRadius,
   outerRadius,
   fill,
+  stroke = "#333",
+  strokeWidth = 0.5,
+  textureId,
   highlighted = false,
+  highlightColor = "#ffcc00",
   onClick,
   interactive = false,
 }) => {
-  // Calculate angles in radians
+  // Winkel in Radianten berechnen
   const angleSize = (2 * Math.PI) / totalSegments;
   const startAngle = segmentIndex * angleSize - Math.PI / 2;
   const endAngle = startAngle + angleSize;
 
-  // Calculate points for the path
+  // Punkte für den Pfad berechnen
   const startX1 = innerRadius * Math.cos(startAngle);
   const startY1 = innerRadius * Math.sin(startAngle);
   const startX2 = outerRadius * Math.cos(startAngle);
@@ -40,7 +48,7 @@ const DartBoardSection: React.FC<DartBoardSectionProps> = ({
   const endX2 = outerRadius * Math.cos(endAngle);
   const endY2 = outerRadius * Math.sin(endAngle);
 
-  // Create path for the section
+  // Pfad für das Segment erstellen
   const largeArcFlag = angleSize > Math.PI ? 1 : 0;
   const path = [
     `M ${startX1} ${startY1}`,
@@ -51,42 +59,38 @@ const DartBoardSection: React.FC<DartBoardSectionProps> = ({
     'Z',
   ].join(' ');
 
-  // Add label for the section (only for debugging)
-  const labelRadius = (innerRadius + outerRadius) / 2;
-  const labelAngle = startAngle + angleSize / 2;
-  const labelX = labelRadius * Math.cos(labelAngle);
-  const labelY = labelRadius * Math.sin(labelAngle);
-  
-  // Tooltip text
+  // Tooltip-Text
   const tooltipText = `${value}${multiplier > 1 ? ` x${multiplier}` : ''}`;
-
+  
+  // Eindeutige ID für den Highlight-Gradient
+  const highlightId = `highlight-${value}-${multiplier}-${segmentIndex}`;
+  
+  // Wenn textureId gesetzt ist, verwende diese anstelle der fill-Farbe
+  const fillValue = textureId ? `url(#${textureId})` : fill;
+  
   return (
     <g onClick={onClick} style={{ cursor: interactive ? 'pointer' : 'default' }}>
+      {/* Highlight-Gradient für hervorgehobene Segmente */}
+      {highlighted && (
+        <defs>
+          <linearGradient id={highlightId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={highlightColor} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={highlightColor} stopOpacity="0.4" />
+          </linearGradient>
+        </defs>
+      )}
+      
+      {/* Haupt-Segment */}
       <path
         d={path}
-        fill={highlighted ? '#ffcc00' : fill}
-        stroke="#333"
-        strokeWidth={0.5}
+        fill={highlighted ? `url(#${highlightId})` : fillValue}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
       >
         {interactive && (
           <title>{tooltipText} = {value * multiplier}</title>
         )}
       </path>
-      
-      {/* Visible text for larger segments (not used in this implementation) */}
-      {false && (
-        <text
-          x={labelX}
-          y={labelY}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#fff"
-          fontSize={10}
-          style={{ pointerEvents: 'none' }}
-        >
-          {value * multiplier}
-        </text>
-      )}
     </g>
   );
 };

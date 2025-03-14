@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Button from '../ui/Button';
-import { getAllDartSections } from '../../utils/dartLogic';
 
 interface ScoreInputProps {
   onScoreSubmit: (score: number) => void;
@@ -20,49 +19,49 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   gameType,
 }) => {
   const [manualScore, setManualScore] = useState<string>('');
-  const [showQuickScores, setShowQuickScores] = useState<boolean>(false);
+  const [showQuickScores, setShowQuickScores] = useState<boolean>(true);
   
-  // Get all possible dart sections and verwende sie tatsächlich
-  const dartSections = getAllDartSections();
-  const commonScoreSections = dartSections.filter(section => 
-    ['double', 'triple', 'bullseye'].includes(section.type)
-  ).slice(0, 5); // Nur die ersten 5 zur Demonstration anzeigen
+  // Gängige Punktzahlen für schnelle Eingabe
+  const quickScores = [
+    { value: 180, label: '180' },
+    { value: 140, label: '140' },
+    { value: 100, label: '100' },
+    { value: 60, label: 'T20' },
+    { value: 57, label: 'T19' },
+    { value: 54, label: 'T18' },
+    { value: 50, label: 'Bull' },
+    { value: 40, label: 'D20' },
+    { value: 38, label: 'D19' },
+    { value: 36, label: 'D18' },
+    { value: 26, label: 'D13' },
+    { value: 25, label: '25' },
+    { value: 20, label: '20' },
+    { value: 19, label: '19' },
+    { value: 18, label: '18' },
+    { value: 0, label: 'Miss' },
+  ];
   
-  // Filter popular scores for quick selection based on game type
-  const getQuickScores = () => {
-    // Default popular scores
-    const popularScores = [
-      { value: 180, label: '180' },
-      { value: 140, label: 'T20 T20 20' },
-      { value: 100, label: 'T20 20 20' },
-      { value: 60, label: 'T20' },
-      { value: 57, label: 'T19' },
-      { value: 54, label: 'T18' },
-      { value: 50, label: 'Bull' },
-      { value: 40, label: 'D20' },
-      { value: 0, label: 'Miss' },
-    ];
-    
-    // For 01 games, add checkout scores if close to winning
+  // Mögliche Checkout-Optionen basierend auf aktuellem Score
+  const getCheckoutOptions = () => {
     if ((gameType === '501' || gameType === '301') && currentScore <= 170) {
       const checkoutScores = [];
       
-      // Add common checkout combinations
+      // Füge häufige Checkout-Kombinationen hinzu
       if (currentScore === 170) checkoutScores.push({ value: 170, label: 'T20 T20 Bull' });
       if (currentScore === 160) checkoutScores.push({ value: 160, label: 'T20 T20 D20' });
       if (currentScore === 136) checkoutScores.push({ value: 136, label: 'T20 T20 D8' });
       if (currentScore === 100) checkoutScores.push({ value: 100, label: 'T20 D20' });
       if (currentScore === 50) checkoutScores.push({ value: 50, label: 'Bull' });
       
-      // For direct doubles
+      // Für direkte Doubles
       if (currentScore <= 40 && currentScore % 2 === 0) {
         checkoutScores.push({ value: currentScore, label: `D${currentScore / 2}` });
       }
       
-      return [...checkoutScores, ...popularScores];
+      return checkoutScores.length > 0 ? checkoutScores : null;
     }
     
-    return popularScores;
+    return null;
   };
 
   const handleManualScoreSubmit = (e: React.FormEvent) => {
@@ -77,6 +76,8 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   const handleQuickScoreClick = (score: number) => {
     onScoreSubmit(score);
   };
+
+  const checkoutOptions = getCheckoutOptions();
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -104,8 +105,9 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
             max="180"
             value={manualScore}
             onChange={(e) => setManualScore(e.target.value)}
-            placeholder="Punkte eingeben"
+            placeholder="Punkte eingeben (0-180)"
             className="border rounded px-3 py-2 w-full"
+            autoFocus
           />
           <Button type="submit" variant="primary">
             Eintragen
@@ -113,21 +115,23 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
         </div>
       </form>
       
-      {/* Common Dart Sections (verwendet dartSections) */}
-      <div className="mb-3">
-        <p className="text-sm text-gray-500 mb-1">Häufige Sektionen:</p>
-        <div className="flex flex-wrap gap-1">
-          {commonScoreSections.map(section => (
-            <span 
-              key={section.value} 
-              className="text-xs bg-gray-100 px-2 py-1 rounded"
-              title={`${section.value} Punkte`}
-            >
-              {section.label}
-            </span>
-          ))}
+      {/* Checkout options if available */}
+      {checkoutOptions && (
+        <div className="mb-4">
+          <p className="text-sm font-medium text-green-600 mb-2">Mögliche Checkouts:</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {checkoutOptions.map(option => (
+              <button
+                key={option.value}
+                onClick={() => handleQuickScoreClick(option.value)}
+                className="bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-sm text-green-800 border border-green-300"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Quick score buttons toggle */}
       <div className="mb-2">
@@ -149,12 +153,12 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
       
       {/* Quick score buttons */}
       {showQuickScores && (
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {getQuickScores().map(score => (
+        <div className="grid grid-cols-4 gap-2 mb-4">
+          {quickScores.map(score => (
             <button
               key={score.value}
               onClick={() => handleQuickScoreClick(score.value)}
-              className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-sm"
+              className="bg-gray-100 hover:bg-gray-200 px-2 py-2 rounded text-sm font-medium"
             >
               {score.label}
             </button>
@@ -232,16 +236,133 @@ function getCheckoutSuggestion(score: number): string {
     132: 'T20 T16 D12',
     131: 'T20 T13 D16',
     130: 'T20 T18 D8',
-    // ... many more combinations
+    129: 'T19 T16 D12',
+    128: 'T18 T18 D10',
+    127: 'T20 T17 D8',
+    126: 'T19 T19 D6',
+    125: 'T20 T19 D4',
+    124: 'T20 T16 D8',
+    123: 'T19 T18 D6',
+    122: 'T18 T18 D7',
+    121: 'T20 T11 D14',
+    120: 'T20 S20 D20',
+    119: 'T19 T12 D13',
+    118: 'T20 S18 D20',
+    117: 'T20 S17 D20',
+    116: 'T20 S16 D20',
+    115: 'T19 S18 D20',
+    114: 'T20 S14 D20',
+    113: 'T19 S16 D20',
+    112: 'T20 S12 D20',
+    111: 'T19 S14 D20',
+    110: 'T20 S10 D20',
+    109: 'T19 S12 D20',
+    108: 'T20 S8 D20',
+    107: 'T19 S10 D20',
+    106: 'T20 S6 D20',
+    105: 'T19 S8 D20',
+    104: 'T19 S16 D16',
+    103: 'T19 S10 D18',
+    102: 'T20 S10 D16',
+    101: 'T17 S10 D20',
+    100: 'T20 D20',
+    99: 'T19 S10 D16',
+    98: 'T20 D19',
+    97: 'T19 D20',
+    96: 'T20 D18',
+    95: 'T19 D19',
+    94: 'T18 D20',
+    93: 'T19 D18',
+    92: 'T20 D16',
+    91: 'T17 D20',
+    90: 'T20 D15',
+    89: 'T19 D16',
+    88: 'T20 D14',
+    87: 'T17 D18',
+    86: 'T18 D16',
+    85: 'T15 D20',
+    84: 'T20 D12',
+    83: 'T17 D16',
+    82: 'T14 D20',
+    81: 'T19 D12',
+    80: 'T20 D10',
+    79: 'T19 D11',
+    78: 'T18 D12',
+    77: 'T19 D10',
+    76: 'T20 D8',
+    75: 'T17 D12',
+    74: 'T14 D16',
+    73: 'T19 D8',
+    72: 'T16 D12',
+    71: 'T13 D16',
+    70: 'T18 D8',
+    69: 'T19 D6',
+    68: 'T20 D4',
+    67: 'T17 D8',
+    66: 'T10 D18',
+    65: 'T19 D4',
+    64: 'T16 D8',
+    63: 'T13 D12',
+    62: 'T10 D16',
+    61: 'T15 D8',
+    60: 'S20 D20',
+    59: 'S19 D20',
+    58: 'S18 D20',
+    57: 'S17 D20',
+    56: 'S16 D20',
+    55: 'S15 D20',
+    54: 'S14 D20',
+    53: 'S13 D20',
+    52: 'S12 D20',
+    51: 'S11 D20',
+    50: 'Bull',
+    49: 'S9 D20',
+    48: 'S16 D16',
+    47: 'S15 D16',
+    46: 'S6 D20',
+    45: 'S13 D16',
+    44: 'S12 D16',
+    43: 'S11 D16',
+    42: 'S10 D16',
+    41: 'S9 D16',
     40: 'D20',
+    39: 'S7 D16',
+    38: 'D19',
+    37: 'S5 D16',
     36: 'D18',
+    35: 'S3 D16',
+    34: 'D17',
+    33: 'S1 D16',
     32: 'D16',
+    31: 'S7 D12',
+    30: 'D15',
+    29: 'S13 D8',
+    28: 'D14',
+    27: 'S11 D8',
+    26: 'D13',
+    25: 'S9 D8',
     24: 'D12',
+    23: 'S7 D8',
+    22: 'D11',
+    21: 'S5 D8',
     20: 'D10',
+    19: 'S3 D8',
+    18: 'D9',
+    17: 'S1 D8',
     16: 'D8',
+    15: 'S7 D4',
+    14: 'D7',
+    13: 'S5 D4',
     12: 'D6',
+    11: 'S3 D4',
+    10: 'D5',
+    9: 'S1 D4',
     8: 'D4',
+    7: 'S3 D2',
+    6: 'D3',
+    5: 'S1 D2',
     4: 'D2',
+    3: 'S1 D1',
     2: 'D1',
   };
   

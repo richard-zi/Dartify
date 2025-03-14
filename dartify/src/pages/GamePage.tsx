@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import CameraView from '../components/camera/CameraView';
 import CameraControls from '../components/camera/CameraControls';
-import DartBoard from '../components/dartboard/DartBoard';
 import ScoreBoard from '../components/game/ScoreBoard';
 import ScoreInput from '../components/game/ScoreInput';
 import GameControls from '../components/game/GameControls';
@@ -17,7 +16,6 @@ const GamePage: React.FC = () => {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
   const [showWinnerModal, setShowWinnerModal] = useState(false);
-  const [showDartboard, setShowDartboard] = useState(false);
   
   const {
     isActive: isCameraActive,
@@ -76,12 +74,7 @@ const GamePage: React.FC = () => {
   const handleNextPlayer = () => {
     dispatch({ type: 'NEXT_PLAYER' });
   };
-
-  // Handle dartboard section click
-  const handleDartboardSectionClick = (value: number, multiplier: number) => {
-    handleScoreSubmit(value * multiplier);
-  };
-
+  
   // Handle camera toggle
   const handleCameraToggle = () => {
     if (isCameraActive) {
@@ -132,27 +125,6 @@ const GamePage: React.FC = () => {
                     showControls={false}
                   />
                 </div>
-                
-                {/* Toggle Dartboard Button */}
-                <div className="mt-4 flex justify-center">
-                  <Button
-                    onClick={() => setShowDartboard(!showDartboard)}
-                    variant="secondary"
-                  >
-                    {showDartboard ? "Dartscheibe ausblenden" : "Dartscheibe anzeigen"}
-                  </Button>
-                </div>
-                
-                {/* Interactive Dartboard */}
-                {showDartboard && (
-                  <div className="mt-4 bg-white p-4 rounded-lg shadow flex justify-center">
-                    <DartBoard 
-                      size={300}
-                      interactive={true}
-                      onSectionClick={handleDartboardSectionClick}
-                    />
-                  </div>
-                )}
               </div>
             )}
           </div>
