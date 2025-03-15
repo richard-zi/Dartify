@@ -173,6 +173,7 @@ const PlayerStatistics: React.FC<{
 const GamePage: React.FC = () => {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
+  // Behalte den showCheckoutHint Status bei, aber reduziere die Anzeigezeit auf 2 Sekunden
   const [showCheckoutHint, setShowCheckoutHint] = useState(false);
   const [gamePhase, setGamePhase] = useState<'selection' | 'active' | 'statistics'>('selection');
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
@@ -206,14 +207,14 @@ const GamePage: React.FC = () => {
     }
   }, [isGameActive, state.isGameOver, state.players.length, state.winner]);
   
-  // Check if current player is in checkout range
+  // Check if current player is in checkout range - reduziere auf 2 Sekunden Anzeigezeit
   useEffect(() => {
     if (currentPlayer && isCheckoutRange(currentPlayer.score, state.options.doubleOut)) {
       setShowCheckoutHint(true);
-      // Hide the hint after 3 seconds
+      // Hide the hint after 2 seconds instead of 3
       const timer = setTimeout(() => {
         setShowCheckoutHint(false);
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     } else {
       setShowCheckoutHint(false);
@@ -457,7 +458,7 @@ const GamePage: React.FC = () => {
           </div>
         )}
         
-        {/* Checkout Hint Toast */}
+        {/* Checkout Hint Toast - behalte diese bei, aber ändere die Anzeigeposition */}
         {showCheckoutHint && currentPlayer && checkoutDetails?.isCheckout && (
           <div className="fixed bottom-4 right-4 bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-3 rounded shadow-md z-50">
             <div className="flex items-center">
