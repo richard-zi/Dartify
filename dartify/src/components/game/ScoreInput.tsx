@@ -85,8 +85,8 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   const isCheckoutRange = (gameType === '501' || gameType === '301') && currentScore <= 170 && currentScore > 1;
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-lg font-medium mb-3">Punkteingabe</h3>
+    <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <h3 className="text-lg font-medium mb-3 text-gray-800">Score Input</h3>
       
       {/* Darts thrown indicator */}
       <div className="flex justify-center mb-4">
@@ -94,7 +94,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
           <div 
             key={dart} 
             className={`w-4 h-4 mx-1 rounded-full ${
-              dart <= dartsThrown ? 'bg-blue-500' : 'bg-gray-300'
+              dart <= dartsThrown ? 'bg-indigo-500' : 'bg-gray-200'
             }`}
           >
           </div>
@@ -110,25 +110,25 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
             max="60"
             value={manualScore}
             onChange={(e) => setManualScore(e.target.value)}
-            placeholder="Punkte eingeben (0-60)"
-            className="border rounded px-3 py-2 w-full"
+            placeholder="Enter points (0-60)"
+            className="border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
             autoFocus
           />
           <Button type="submit" variant="primary">
-            Eintragen
+            Enter
           </Button>
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Gib Punkte für einen einzelnen Wurf ein (0-60).
+          Enter points for a single throw (0-60).
         </p>
       </form>
       
       {/* Checkout options if available */}
       {isCheckoutRange && (
-        <div className={`mb-4 p-3 rounded ${checkoutOptions ? 'bg-green-100 border border-green-300' : 'bg-yellow-50 border border-yellow-200'}`}>
+        <div className={`mb-4 p-3 rounded ${checkoutOptions ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
           <p className="text-sm font-medium text-green-800 mb-2">
-            <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span>
-            Checkout möglich: {getCheckoutSuggestion(currentScore)}
+            <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-1"></span>
+            Checkout possible: {getCheckoutSuggestion(currentScore)}
           </p>
           
           {checkoutOptions && (
@@ -137,7 +137,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
                 <button
                   key={option.value}
                   onClick={() => handleQuickScoreClick(option.value)}
-                  className="bg-green-200 hover:bg-green-300 px-2 py-1 rounded text-sm text-green-800 border border-green-300 transition-colors"
+                  className="bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-sm text-green-800 border border-green-200 transition-colors"
                 >
                   {option.label}
                 </button>
@@ -151,9 +151,9 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
       <div className="mb-2">
         <button 
           onClick={() => setShowQuickScores(!showQuickScores)}
-          className="text-blue-600 text-sm flex items-center"
+          className="text-indigo-600 text-sm flex items-center"
         >
-          {showQuickScores ? 'Schnellwahl ausblenden' : 'Schnellwahl anzeigen'}
+          {showQuickScores ? 'Hide Quick Select' : 'Show Quick Select'}
           <svg 
             className={`ml-1 w-4 h-4 transform ${showQuickScores ? 'rotate-180' : ''}`} 
             fill="none" 
@@ -172,7 +172,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
             <button
               key={score.value}
               onClick={() => handleQuickScoreClick(score.value)}
-              className="bg-gray-100 hover:bg-gray-200 px-2 py-2 rounded text-sm font-medium transition-colors"
+              className="bg-gray-50 hover:bg-gray-100 px-2 py-2 rounded text-sm font-medium border border-gray-100 transition-colors"
             >
               {score.label}
             </button>
@@ -187,28 +187,28 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
           variant="secondary"
           disabled={dartsThrown === 0}
         >
-          Rückgängig
+          Undo
         </Button>
         <Button 
           onClick={onNextPlayer} 
           variant="primary"
         >
-          Nächster Spieler
+          Next Player
         </Button>
       </div>
       
       {/* Game info */}
       {(gameType === '501' || gameType === '301') && (
-        <div className="mt-4 pt-3 border-t text-sm">
+        <div className="mt-4 pt-3 border-t border-gray-100 text-sm">
           <p className="flex justify-between">
-            <span>Verbleibende Punkte:</span> 
-            <span className={`font-bold ${isCheckoutRange ? 'text-green-600' : ''}`}>{currentScore}</span>
+            <span className="text-gray-600">Remaining Points:</span> 
+            <span className={`font-bold ${isCheckoutRange ? 'text-green-600' : 'text-gray-800'}`}>{currentScore}</span>
           </p>
           
           {/* Display if we're getting close to checkout but not yet there */}
           {!isCheckoutRange && currentScore > 170 && currentScore <= 230 && (
-            <p className="text-blue-600 mt-1 text-xs">
-              Noch {currentScore - 170} Punkte bis zum möglichen Checkout
+            <p className="text-indigo-600 mt-1 text-xs">
+              {currentScore - 170} points until possible checkout
             </p>
           )}
         </div>
@@ -343,47 +343,28 @@ function getCheckoutSuggestion(score: number): string {
     42: 'S10 D16',
     41: 'S9 D16',
     40: 'D20',
-    39: 'S7 D16',
     38: 'D19',
-    37: 'S5 D16',
     36: 'D18',
-    35: 'S3 D16',
     34: 'D17',
-    33: 'S1 D16',
     32: 'D16',
-    31: 'S7 D12',
     30: 'D15',
-    29: 'S13 D8',
     28: 'D14',
-    27: 'S11 D8',
     26: 'D13',
-    25: 'S9 D8',
     24: 'D12',
-    23: 'S7 D8',
     22: 'D11',
-    21: 'S5 D8',
     20: 'D10',
-    19: 'S3 D8',
     18: 'D9',
-    17: 'S1 D8',
     16: 'D8',
-    15: 'S7 D4',
     14: 'D7',
-    13: 'S5 D4',
     12: 'D6',
-    11: 'S3 D4',
     10: 'D5',
-    9: 'S1 D4',
     8: 'D4',
-    7: 'S3 D2',
     6: 'D3',
-    5: 'S1 D2',
     4: 'D2',
-    3: 'S1 D1',
     2: 'D1',
   };
   
-  return checkouts[score] || 'Individuell';
+  return checkouts[score] || 'Custom';
 }
 
 export default ScoreInput;

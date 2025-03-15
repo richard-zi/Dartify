@@ -28,15 +28,15 @@ const CameraControls: React.FC<CameraControlsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-lg font-medium mb-4">Kamera Steuerung</h3>
+    <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <h3 className="text-lg font-medium mb-4 text-gray-800">Camera</h3>
       
       <div className="flex flex-wrap gap-2 mb-4">
         <Button
           onClick={onCameraToggle}
           variant={isActive ? "danger" : "primary"}
         >
-          {isActive ? "Kamera stoppen" : "Kamera starten"}
+          {isActive ? "Stop Camera" : "Start Camera"}
         </Button>
         
         {isActive && (
@@ -45,13 +45,13 @@ const CameraControls: React.FC<CameraControlsProps> = ({
             variant={isDetecting ? "secondary" : "success"}
             disabled={!isActive}
           >
-            {isDetecting ? "Erkennung pausieren" : "Erkennung starten"}
+            {isDetecting ? "Pause Detection" : "Start Detection"}
           </Button>
         )}
       </div>
       
-      <div className="border-t pt-4">
-        <h4 className="text-sm font-medium mb-2">Manuelle Punkteingabe</h4>
+      <div className="border-t border-gray-100 pt-4">
+        <h4 className="text-sm font-medium mb-2 text-gray-700">Manual Score Entry</h4>
         <form onSubmit={handleManualScoreSubmit} className="flex gap-2">
           <input
             type="number"
@@ -59,27 +59,27 @@ const CameraControls: React.FC<CameraControlsProps> = ({
             max="180"
             value={manualScore}
             onChange={(e) => setManualScore(e.target.value)}
-            placeholder="Punkte (0-180)"
-            className="border rounded px-3 py-2 w-full"
+            placeholder="Points (0-180)"
+            className="border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
           />
           <Button type="submit" variant="primary" size="sm">
-            Eintragen
+            Enter
           </Button>
         </form>
         <p className="text-xs text-gray-500 mt-1">
-          Gib eine Punktzahl zwischen 0 und 180 ein.
+          Enter a score between 0 and 180.
         </p>
       </div>
       
       <div className="mt-4 text-sm">
         <p className="flex items-center">
-          <span className={`inline-block w-3 h-3 rounded-full mr-2 ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-          Kamera: {isActive ? "Aktiv" : "Inaktiv"}
+          <span className={`inline-block w-3 h-3 rounded-full mr-2 ${isActive ? 'bg-green-400' : 'bg-gray-300'}`}></span>
+          <span className="text-gray-700">Camera: {isActive ? "Active" : "Inactive"}</span>
         </p>
         {isActive && (
           <p className="flex items-center mt-1">
-            <span className={`inline-block w-3 h-3 rounded-full mr-2 ${isDetecting ? 'bg-red-500' : 'bg-gray-400'}`}></span>
-            Erkennung: {isDetecting ? "Aktiv" : "Inaktiv"}
+            <span className={`inline-block w-3 h-3 rounded-full mr-2 ${isDetecting ? 'bg-red-400' : 'bg-gray-300'}`}></span>
+            <span className="text-gray-700">Detection: {isDetecting ? "Active" : "Inactive"}</span>
           </p>
         )}
       </div>

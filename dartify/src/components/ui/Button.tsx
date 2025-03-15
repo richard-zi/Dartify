@@ -24,16 +24,16 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'font-medium rounded focus:outline-none transition-colors';
   
   const variantClasses = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-    danger: 'bg-red-600 hover:bg-red-700 text-white',
-    success: 'bg-green-600 hover:bg-green-700 text-white',
+    primary: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200',
+    danger: 'bg-red-500 hover:bg-red-600 text-white',
+    success: 'bg-emerald-500 hover:bg-emerald-600 text-white',
   };
   
   const sizeClasses = {
     sm: 'py-1 px-3 text-sm',
-    md: 'py-2 px-4 text-base',
-    lg: 'py-3 px-6 text-lg',
+    md: 'py-2 px-4 text-sm',
+    lg: 'py-3 px-6 text-base',
   };
   
   const widthClass = fullWidth ? 'w-full' : '';

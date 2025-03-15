@@ -1,20 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const isActive = (path: string) => {
-    return location.pathname === path ? 'bg-blue-700' : '';
+    return location.pathname === path ? 'bg-indigo-700' : '';
   };
   
   return (
-    <header className="bg-blue-600 text-white shadow-md">
+    <header className="bg-indigo-600 text-white shadow-sm">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center py-3">
           <div className="flex items-center">
             <svg 
-              className="h-8 w-8 mr-2" 
+              className="h-8 w-8 mr-2 text-indigo-200" 
               viewBox="0 0 24 24" 
               fill="currentColor"
             >
@@ -26,26 +27,29 @@ const Header: React.FC = () => {
           <nav className="hidden md:flex space-x-1">
             <Link 
               to="/" 
-              className={`px-3 py-2 rounded hover:bg-blue-700 transition-colors ${isActive('/')}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors ${isActive('/')}`}
             >
               Home
             </Link>
             <Link 
               to="/setup" 
-              className={`px-3 py-2 rounded hover:bg-blue-700 transition-colors ${isActive('/setup')}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors ${isActive('/setup')}`}
             >
-              Player Setup
+              Players
             </Link>
             <Link 
               to="/game" 
-              className={`px-3 py-2 rounded hover:bg-blue-700 transition-colors ${isActive('/game')}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors ${isActive('/game')}`}
             >
               Game
             </Link>
           </nav>
           
           <div className="md:hidden">
-            <button className="focus:outline-none">
+            <button 
+              className="focus:outline-none" 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
               <svg 
                 className="h-6 w-6" 
                 viewBox="0 0 24 24" 
@@ -55,11 +59,42 @@ const Header: React.FC = () => {
                 strokeLinecap="round" 
                 strokeLinejoin="round"
               >
-                <path d="M3 12h18M3 6h18M3 18h18" />
+                {isMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M3 12h18M3 6h18M3 18h18" />
+                )}
               </svg>
             </button>
           </div>
         </div>
+        
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden py-2 border-t border-indigo-500">
+            <Link 
+              to="/" 
+              className={`block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors ${isActive('/')}`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/setup" 
+              className={`block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors ${isActive('/setup')}`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Players
+            </Link>
+            <Link 
+              to="/game" 
+              className={`block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors ${isActive('/game')}`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Game
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

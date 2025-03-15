@@ -3,28 +3,24 @@ import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { GameType } from '../../types';
 
-// Define the props interface explicitly
 interface GameControlsProps {
-  onStartGame: (gameType: GameType) => void;
   onResetGame: () => void;
   onEndGame: () => void;
   isGameActive: boolean;
+  gameType: GameType;
+  round: number;
+  currentPlayerIndex: number;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
-  onStartGame,
   onResetGame,
   onEndGame,
   isGameActive,
+  gameType,
+  round,
+  currentPlayerIndex,
 }) => {
-  const [showStartModal, setShowStartModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
-  const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
-
-  const handleStartGame = () => {
-    onStartGame(selectedGameType);
-    setShowStartModal(false);
-  };
 
   const handleResetConfirm = () => {
     onResetGame();
@@ -32,26 +28,18 @@ const GameControls: React.FC<GameControlsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-lg font-medium mb-4">Spielsteuerung</h3>
+    <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <h3 className="text-lg font-medium mb-4 text-gray-800">Game Controls</h3>
       
       <div className="grid grid-cols-2 gap-3">
-        {!isGameActive ? (
-          <Button
-            onClick={() => setShowStartModal(true)}
-            variant="primary"
-            fullWidth
-          >
-            Spiel starten
-          </Button>
-        ) : (
+        {isGameActive ? (
           <>
             <Button
               onClick={() => setShowResetModal(true)}
               variant="secondary"
               fullWidth
             >
-              Spiel zurücksetzen
+              Reset
             </Button>
             
             <Button
@@ -59,149 +47,54 @@ const GameControls: React.FC<GameControlsProps> = ({
               variant="danger"
               fullWidth
             >
-              Spiel beenden
+              End Game
             </Button>
           </>
+        ) : (
+          <div className="col-span-2">
+            <p className="text-sm text-gray-500 mb-2">
+              Select a game type to begin.
+            </p>
+          </div>
         )}
       </div>
       
       {/* Game active status */}
       {isGameActive && (
-        <div className="mt-4 p-3 bg-gray-100 rounded">
-          <p className="text-sm font-medium">Aktives Spiel:</p>
-          <p className="text-lg font-bold">{"501"}</p>
-          <p className="text-sm">
-            Runde: {1} | Spieler: {0}
+        <div className="mt-4 p-3 bg-gray-50 rounded border-l-4 border-indigo-500">
+          <p className="text-sm font-medium text-gray-500">Active Game:</p>
+          <p className="text-lg font-bold text-indigo-700">{gameType}</p>
+          <p className="text-sm text-gray-500">
+            Round: {round} | Player: {currentPlayerIndex + 1}
           </p>
         </div>
       )}
-      
-      {/* Game type selection modal */}
-      <Modal
-        isOpen={showStartModal}
-        onClose={() => setShowStartModal(false)}
-        title="Spiel starten"
-        footer={
-          <>
-            <Button
-              onClick={() => setShowStartModal(false)}
-              variant="secondary"
-            >
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleStartGame}
-              variant="primary"
-            >
-              Starten
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <p>Wähle den Spieltyp:</p>
-          
-          <div className="grid grid-cols-1 gap-2">
-            <div
-              className={`border rounded p-3 cursor-pointer ${
-                selectedGameType === "501" ? "border-blue-500 bg-blue-50" : ""
-              }`}
-              onClick={() => setSelectedGameType("501")}
-            >
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  checked={selectedGameType === "501"}
-                  onChange={() => setSelectedGameType("501")}
-                  className="mr-2"
-                />
-                <div>
-                  <h4 className="font-medium">501</h4>
-                  <p className="text-sm text-gray-600">
-                    Standard 501 Spiel. Starte mit 501 Punkten und zähle auf 0 runter.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div
-              className={`border rounded p-3 cursor-pointer ${
-                selectedGameType === "301" ? "border-blue-500 bg-blue-50" : ""
-              }`}
-              onClick={() => setSelectedGameType("301")}
-            >
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  checked={selectedGameType === "301"}
-                  onChange={() => setSelectedGameType("301")}
-                  className="mr-2"
-                />
-                <div>
-                  <h4 className="font-medium">301</h4>
-                  <p className="text-sm text-gray-600">
-                    Kurzes Spiel. Starte mit 301 Punkten und zähle auf 0 runter.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div
-              className={`border rounded p-3 cursor-pointer ${
-                selectedGameType === "Cricket" ? "border-blue-500 bg-blue-50" : ""
-              }`}
-              onClick={() => setSelectedGameType("Cricket")}
-            >
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  checked={selectedGameType === "Cricket"}
-                  onChange={() => setSelectedGameType("Cricket")}
-                  className="mr-2"
-                />
-                <div>
-                  <h4 className="font-medium">Cricket</h4>
-                  <p className="text-sm text-gray-600">
-                    Treffe die Zahlen 15-20 und Bullseye drei Mal, um sie zu schließen.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-2">
-            <p className="text-sm text-gray-500">
-              Hinweis: Jedes Spiel beginnt mit dem ersten Spieler in der Liste.
-            </p>
-          </div>
-        </div>
-      </Modal>
       
       {/* Reset confirmation modal */}
       <Modal
         isOpen={showResetModal}
         onClose={() => setShowResetModal(false)}
-        title="Spiel zurücksetzen"
+        title="Reset Game"
         footer={
           <>
             <Button
               onClick={() => setShowResetModal(false)}
               variant="secondary"
             >
-              Abbrechen
+              Cancel
             </Button>
             <Button
               onClick={handleResetConfirm}
               variant="danger"
             >
-              Zurücksetzen
+              Reset
             </Button>
           </>
         }
       >
-        <p>Bist du sicher, dass du das aktuelle Spiel zurücksetzen möchtest?</p>
+        <p>Are you sure you want to reset the current game?</p>
         <p className="mt-2 text-sm text-gray-600">
-          Das Spiel wird mit denselben Spielern neu gestartet. Alle Punkte werden zurückgesetzt.
+          The game will be restarted with the same players. All scores will be reset.
         </p>
       </Modal>
     </div>

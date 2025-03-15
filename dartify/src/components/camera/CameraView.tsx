@@ -58,7 +58,7 @@ const CameraView: React.FC<CameraViewProps> = ({
           ) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-white">
-                {error || "Kamera ist nicht aktiv"}
+                {error || "Camera not active"}
               </p>
             </div>
           )}
@@ -67,13 +67,13 @@ const CameraView: React.FC<CameraViewProps> = ({
         {/* Detection Overlay */}
         {isDetecting && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
-            Erkennung aktiv
+            Detection active
           </div>
         )}
 
         {/* Last Detected Score */}
         {lastDetectedScore !== null && (
-          <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-lg font-bold">
+          <div className="absolute top-2 left-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-lg font-bold">
             {lastDetectedScore}
           </div>
         )}
@@ -84,21 +84,21 @@ const CameraView: React.FC<CameraViewProps> = ({
         <div className="mt-4 flex flex-wrap gap-2">
           {!isActive ? (
             <Button onClick={startCamera} variant="primary">
-              Kamera starten
+              Start Camera
             </Button>
           ) : (
             <>
               <Button onClick={stopCamera} variant="danger">
-                Kamera stoppen
+                Stop Camera
               </Button>
               <Button
                 onClick={toggleDetection}
                 variant={isDetecting ? "secondary" : "success"}
               >
-                {isDetecting ? "Erkennung pausieren" : "Erkennung starten"}
+                {isDetecting ? "Pause Detection" : "Start Detection"}
               </Button>
               <Button onClick={simulateDetection} variant="secondary">
-                Wurf simulieren
+                Simulate Throw
               </Button>
             </>
           )}
@@ -108,10 +108,10 @@ const CameraView: React.FC<CameraViewProps> = ({
       {/* Status Information */}
       <div className="mt-4 text-sm text-gray-600">
         <p>
-          Status: {isActive ? (isDetecting ? "Erkennung läuft" : "Kamera aktiv") : "Inaktiv"}
+          Status: {isActive ? (isDetecting ? "Detection Running" : "Camera Active") : "Inactive"}
         </p>
         {lastDetectedScore !== null && (
-          <p>Letzter erkannter Wurf: {lastDetectedScore} Punkte</p>
+          <p>Last detected throw: {lastDetectedScore} points</p>
         )}
         {error && (
           <p className="text-red-500">{error}</p>
