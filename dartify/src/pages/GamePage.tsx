@@ -17,9 +17,10 @@ const PlayerStatistics: React.FC<{
   players: any[];
   winner: any;
   gameType: GameType;
+  doubleOut: boolean;
   onNewGame: () => void;
   onEndGame: () => void;
-}> = ({ players, winner, gameType, onNewGame, onEndGame }) => {
+}> = ({ players, winner, gameType, doubleOut, onNewGame, onEndGame }) => {
   // Sort players by rank (winner first, then by average)
   const rankedPlayers = [...players].sort((a, b) => {
     if (a.id === winner.id) return -1;
@@ -58,6 +59,14 @@ const PlayerStatistics: React.FC<{
             ))}
           </div>
         )}
+
+        {/* Show turns needed for checkout */}
+        {winner.turnCount !== undefined && (
+          <div className="mt-2">
+            <span className="text-gray-700">Turns to checkout: </span>
+            <span className="font-medium text-indigo-700">{winner.turnCount}</span>
+          </div>
+        )}
       </div>
       
       <div className="mb-6">
@@ -71,6 +80,9 @@ const PlayerStatistics: React.FC<{
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average</th>
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Throws</th>
+                {winner.turnCount !== undefined && (
+                  <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turns</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -107,6 +119,11 @@ const PlayerStatistics: React.FC<{
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-gray-900">{totalDarts}</div>
                     </td>
+                    {winner.turnCount !== undefined && (
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="text-gray-900">{player.id === winner.id ? player.turnCount : '-'}</div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -118,7 +135,7 @@ const PlayerStatistics: React.FC<{
       <div className="mt-8">
         <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Game Summary</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500">Total Rounds</div>
             <div className="text-2xl font-bold text-gray-800">{players[0]?.history.length || 0}</div>
@@ -127,6 +144,11 @@ const PlayerStatistics: React.FC<{
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500">Game Type</div>
             <div className="text-2xl font-bold text-gray-800">{gameType}</div>
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="text-sm text-gray-500">Checkout Mode</div>
+            <div className="text-2xl font-bold text-gray-800">{doubleOut ? 'Double Out' : 'Any Finish'}</div>
           </div>
           
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -154,6 +176,7 @@ const GamePage: React.FC = () => {
   const [showCheckoutHint, setShowCheckoutHint] = useState(false);
   const [gamePhase, setGamePhase] = useState<'selection' | 'active' | 'statistics'>('selection');
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
+  const [doubleOut, setDoubleOut] = useState<boolean>(true);
   
   const {
     isActive: isCameraActive,
@@ -185,7 +208,7 @@ const GamePage: React.FC = () => {
   
   // Check if current player is in checkout range
   useEffect(() => {
-    if (currentPlayer && isCheckoutRange(currentPlayer.score)) {
+    if (currentPlayer && isCheckoutRange(currentPlayer.score, state.options.doubleOut)) {
       setShowCheckoutHint(true);
       // Hide the hint after 3 seconds
       const timer = setTimeout(() => {
@@ -195,11 +218,20 @@ const GamePage: React.FC = () => {
     } else {
       setShowCheckoutHint(false);
     }
-  }, [currentPlayer]);
+  }, [currentPlayer, state.options.doubleOut]);
 
   // Handle start game
   const handleStartGame = (gameType: GameType) => {
-    dispatch({ type: 'START_GAME', payload: { gameType } });
+    dispatch({ 
+      type: 'START_GAME', 
+      payload: { 
+        gameType,
+        options: {
+          doubleOut: doubleOut,
+          turnCount: 0
+        }
+      } 
+    });
     setGamePhase('active');
   };
 
@@ -254,7 +286,8 @@ const GamePage: React.FC = () => {
   };
   
   // Get checkout details if available
-  const checkoutDetails = currentPlayer ? getCheckoutSuggestionDetails(currentPlayer.score) : null;
+  const checkoutDetails = currentPlayer ? 
+    getCheckoutSuggestionDetails(currentPlayer.score, state.options.doubleOut) : null;
 
   return (
     <Layout>
@@ -289,7 +322,7 @@ const GamePage: React.FC = () => {
                 <div className="pl-6 mt-2">
                   <div className="py-1 px-2 bg-indigo-100 text-indigo-800 text-xs inline-block rounded">Standard</div>
                   <div className="mt-2 text-xs text-gray-500">
-                    <p>• Double checkout required</p>
+                    <p>• {doubleOut ? 'Double checkout required' : 'Any checkout allowed'}</p>
                     <p>• Unlimited players</p>
                     <p>• Suitable for tournaments</p>
                   </div>
@@ -319,7 +352,7 @@ const GamePage: React.FC = () => {
                 <div className="pl-6 mt-2">
                   <div className="py-1 px-2 bg-green-100 text-green-800 text-xs inline-block rounded">Quick</div>
                   <div className="mt-2 text-xs text-gray-500">
-                    <p>• Double checkout required</p>
+                    <p>• {doubleOut ? 'Double checkout required' : 'Any checkout allowed'}</p>
                     <p>• Ideal for 1-2 players</p>
                     <p>• Shorter play time</p>
                   </div>
@@ -355,6 +388,27 @@ const GamePage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Double Out Toggle Option */}
+            <div className="mb-6 p-4 border rounded-lg border-gray-200">
+              <h3 className="font-bold text-lg text-gray-800 mb-2">Checkout Options</h3>
+              <div className="flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={doubleOut}
+                    onChange={() => setDoubleOut(!doubleOut)}
+                    className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                  />
+                  <span className="ml-2 text-gray-700">Require Double Out</span>
+                </label>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {doubleOut 
+                  ? "Traditional rules: A player must hit a double to complete the game (e.g. D20 for 40 points)." 
+                  : "Any finish allowed: A player can finish with any dart (single, double, triple, or bull)."}
+              </p>
             </div>
             
             <div className="flex justify-between">
@@ -396,6 +450,7 @@ const GamePage: React.FC = () => {
               players={state.players} 
               winner={state.winner} 
               gameType={state.gameType}
+              doubleOut={state.options.doubleOut}
               onNewGame={handleStartNewGame}
               onEndGame={handleEndGame}
             />
@@ -426,6 +481,7 @@ const GamePage: React.FC = () => {
                 players={state.players}
                 currentPlayerIndex={state.currentPlayerIndex}
                 winner={state.winner}
+                doubleOut={state.options.doubleOut}
               />
               
               {/* Camera Feed */}
@@ -451,6 +507,7 @@ const GamePage: React.FC = () => {
                   gameType={state.gameType}
                   round={state.round}
                   currentPlayerIndex={state.currentPlayerIndex}
+                  doubleOut={state.options.doubleOut}
                 />
                 
                 {/* Camera Controls */}
@@ -471,6 +528,7 @@ const GamePage: React.FC = () => {
                     dartsThrown={state.dartsThrown}
                     currentScore={currentPlayer.score}
                     gameType={state.gameType}
+                    doubleOut={state.options.doubleOut}
                   />
                 )}
               </div>

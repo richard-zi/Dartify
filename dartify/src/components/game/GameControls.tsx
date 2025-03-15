@@ -10,6 +10,7 @@ interface GameControlsProps {
   gameType: GameType;
   round: number;
   currentPlayerIndex: number;
+  doubleOut: boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -19,6 +20,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   gameType,
   round,
   currentPlayerIndex,
+  doubleOut
 }) => {
   const [showResetModal, setShowResetModal] = useState(false);
 
@@ -66,6 +68,9 @@ const GameControls: React.FC<GameControlsProps> = ({
           <p className="text-lg font-bold text-indigo-700">{gameType}</p>
           <p className="text-sm text-gray-500">
             Round: {round} | Player: {currentPlayerIndex + 1}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Checkout: {doubleOut ? 'Double Required' : 'Any Finish'}
           </p>
         </div>
       )}

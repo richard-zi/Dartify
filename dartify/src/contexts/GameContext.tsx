@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Player, GameType, GameState } from '../types';
+import { Player, GameType, GameState, GameOptions } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Define action types
 type GameAction =
   | { type: 'ADD_PLAYER'; payload: { name: string } }
   | { type: 'REMOVE_PLAYER'; payload: { id: string } }
-  | { type: 'START_GAME'; payload: { gameType: GameType } }
+  | { type: 'START_GAME'; payload: { gameType: GameType; options?: GameOptions } }
   | { type: 'RESET_GAME' }
   | { type: 'ADD_SCORE'; payload: { score: number } }
   | { type: 'UNDO_THROW' }
@@ -20,7 +20,11 @@ const initialGameState: GameState = {
   isGameOver: false,
   winner: null,
   round: 1,
-  dartsThrown: 0
+  dartsThrown: 0,
+  options: {
+    doubleOut: true, // Default to traditional rules with double out required
+    turnCount: 0
+  }
 };
 
 // Create the context
@@ -41,7 +45,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         initialScore,
         throws: [],
         history: [],
-        average: 0
+        average: 0,
+        turnCount: 0,
+        checkout: undefined // Explicitly initialize to undefined
       };
       return {
         ...state,
@@ -65,7 +71,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         initialScore,
         throws: [],
         history: [],
-        average: 0
+        average: 0,
+        turnCount: 0,
+        checkout: undefined // Explicitly reset checkout
       }));
       
       return {
@@ -76,21 +84,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         isGameOver: false,
         winner: null,
         round: 1,
-        dartsThrown: 0
+        dartsThrown: 0,
+        options: {
+          ...state.options,
+          ...(action.payload.options || {}),
+          turnCount: 0
+        }
       };
     }
 
     case 'RESET_GAME': {
+      // Reset all players to initial state
+      const updatedPlayers = state.players.map(player => ({
+        ...player,
+        score: player.initialScore,
+        throws: [],
+        history: [],
+        average: 0,
+        turnCount: 0,
+        checkout: undefined // Explicitly reset checkout
+      }));
+      
       return {
         ...initialGameState,
-        players: state.players.map(player => ({
-          ...player,
-          score: player.initialScore,
-          throws: [],
-          history: [],
-          average: 0
-        })),
-        gameType: state.gameType
+        players: updatedPlayers,
+        gameType: state.gameType,
+        options: state.options
       };
     }
 
@@ -108,15 +127,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // For 01 games, subtract score; for Cricket, handle differently
       if (state.gameType === "501" || state.gameType === "301") {
-        // Check if this would be a bust (score < 0 or score = 1)
+        // Calculate the new score
         const newScore = updatedPlayer.score - newThrow;
         
-        if (newScore < 0 || newScore === 1) {
+        // Check if this would be a bust (score < 0 or score = 1)
+        // In non-double-out mode, we only check if the score goes below 0
+        const isBust = state.options.doubleOut 
+          ? (newScore < 0 || newScore === 1) 
+          : (newScore < 0);
+        
+        // Check for invalid finish (if doubleOut is required but last dart is not a double)
+        const isInvalidFinish = state.options.doubleOut && 
+          newScore === 0 && 
+          !isDouble(newThrow);
+        
+        if (isBust || isInvalidFinish) {
           // Bust - this throw doesn't count, move to next player
           updatedPlayer.throws.pop(); // Remove the last throw
           
-          // Add empty throw to history
-          if (updatedPlayer.throws.length === 3) {
+          // Add current throws to history if we have any
+          if (updatedPlayer.throws.length > 0) {
             updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
             updatedPlayer.throws = [];
           }
@@ -124,7 +154,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           // Calculate average
           const totalThrows = updatedPlayer.history.flat();
           updatedPlayer.average = totalThrows.length > 0 
-            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
+            ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
             : 0;
           
           return {
@@ -141,8 +171,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         
         // Check for a win
         if (newScore === 0) {
+          // In doubleOut mode, last dart must be a double
+          if (state.options.doubleOut && !isDouble(newThrow)) {
+            // If not a double, treat as a bust
+            updatedPlayer.score = updatedPlayer.score + newThrow;
+            updatedPlayer.throws.pop();
+            
+            // If we've thrown 3 darts, move to next player
+            if (updatedPlayer.throws.length === 3) {
+              updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
+              updatedPlayer.throws = [];
+              
+              return {
+                ...state,
+                players: updatedPlayers,
+                currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
+                round: state.currentPlayerIndex === state.players.length - 1 ? state.round + 1 : state.round,
+                dartsThrown: 0
+              };
+            }
+            
+            return {
+              ...state,
+              players: updatedPlayers,
+              dartsThrown: state.dartsThrown + 1
+            };
+          }
+          
           // Record checkout
           updatedPlayer.checkout = [...updatedPlayer.throws];
+          updatedPlayer.turnCount = state.options.turnCount + 1; // Include current turn
           
           // Add to history
           updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
@@ -150,7 +208,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           // Calculate average
           const totalThrows = [...updatedPlayer.history.flat()];
           updatedPlayer.average = totalThrows.length > 0 
-            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
+            ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
             : 0;
           
           return {
@@ -173,15 +231,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Calculate average (per dart thrown)
         const totalThrows = updatedPlayer.history.flat();
         updatedPlayer.average = totalThrows.length > 0 
-          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
+          ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
           : 0;
+        
+        // Calculate next turn and round
+        const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+        const nextRound = nextPlayerIndex === 0 ? state.round + 1 : state.round;
+        const nextTurnCount = nextPlayerIndex === 0 ? state.options.turnCount + 1 : state.options.turnCount;
         
         return {
           ...state,
           players: updatedPlayers,
-          currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-          round: state.currentPlayerIndex === state.players.length - 1 ? state.round + 1 : state.round,
-          dartsThrown: 0
+          currentPlayerIndex: nextPlayerIndex,
+          round: nextRound,
+          dartsThrown: 0,
+          options: {
+            ...state.options,
+            turnCount: nextTurnCount
+          }
         };
       }
       
@@ -194,73 +261,68 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'UNDO_THROW': {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      // Deep copy of the state to ensure all changes are tracked
+      const newState = JSON.parse(JSON.stringify(state));
+      const currentPlayer = newState.players[newState.currentPlayerIndex];
       
-      // Nothing to undo if no throws yet
-      if (currentPlayer.throws.length === 0) {
-        // If at the start of a new round, go back to the previous player's last throw
-        if (state.dartsThrown === 0 && (state.currentPlayerIndex > 0 || state.round > 1)) {
-          const prevPlayerIndex = state.currentPlayerIndex === 0 
-            ? state.players.length - 1 
-            : state.currentPlayerIndex - 1;
-          const prevPlayer = { ...state.players[prevPlayerIndex] };
-          
-          // If the previous player has no history, can't undo
-          if (prevPlayer.history.length === 0) return state;
-          
-          // Get the last round of throws from history
-          const lastRound = prevPlayer.history[prevPlayer.history.length - 1];
-          prevPlayer.throws = [...lastRound];
-          prevPlayer.history = prevPlayer.history.slice(0, -1);
-          
-          // Recalculate score
-          if (state.gameType === "501" || state.gameType === "301") {
-            prevPlayer.score = prevPlayer.initialScore - prevPlayer.history.flat().reduce((sum, score) => sum + score, 0);
-          }
-          
-          // Update players array
-          const updatedPlayers = [...state.players];
-          updatedPlayers[prevPlayerIndex] = prevPlayer;
-          
-          return {
-            ...state,
-            players: updatedPlayers,
-            currentPlayerIndex: prevPlayerIndex,
-            round: prevPlayerIndex === state.players.length - 1 ? state.round - 1 : state.round,
-            dartsThrown: 3
-          };
+      // If current player has throws, undo the last one
+      if (currentPlayer.throws.length > 0) {
+        const lastThrow = currentPlayer.throws.pop();
+        
+        // Update score (add back the points for 01 games)
+        if (state.gameType === "501" || state.gameType === "301") {
+          currentPlayer.score += lastThrow;
         }
         
-        return state;
+        newState.dartsThrown = Math.max(0, newState.dartsThrown - 1);
+        return newState;
       }
       
-      // Clone player data
-      const updatedPlayers = [...state.players];
-      const updatedPlayer = { ...currentPlayer };
-      updatedPlayers[state.currentPlayerIndex] = updatedPlayer;
-      
-      // Remove the last throw
-      const removedScore = updatedPlayer.throws.pop();
-      
-      // Recalculate score for 01 games
-      if (state.gameType === "501" || state.gameType === "301") {
-        updatedPlayer.score = updatedPlayer.score + (removedScore || 0);
+      // If no throws but we're at the start of a player's turn
+      // Go back to the previous player's turn
+      if (currentPlayer.throws.length === 0 && newState.dartsThrown === 0) {
+        // Calculate previous player index
+        const prevPlayerIndex = (newState.currentPlayerIndex + newState.players.length - 1) % newState.players.length;
+        const prevPlayer = newState.players[prevPlayerIndex];
+        
+        // Check if previous player has history
+        if (prevPlayer.history.length === 0) {
+          return newState; // Can't go back further
+        }
+        
+        // Get last round of throws from history
+        const lastRound = prevPlayer.history.pop();
+        prevPlayer.throws = lastRound;
+        
+        // Recalculate score for 01 games
+        if (state.gameType === "501" || state.gameType === "301") {
+          // Reset to initial score and subtract all throws except last round
+          prevPlayer.score = prevPlayer.initialScore;
+          for (const round of prevPlayer.history) {
+            for (const score of round) {
+              prevPlayer.score -= score;
+            }
+          }
+        }
+        
+        // Update turn count if we're going back to the last player
+        if (prevPlayerIndex === newState.players.length - 1) {
+          newState.options.turnCount = Math.max(0, newState.options.turnCount - 1);
+          newState.round = Math.max(1, newState.round - 1);
+        }
+        
+        newState.currentPlayerIndex = prevPlayerIndex;
+        newState.dartsThrown = lastRound.length;
+        return newState;
       }
       
-      return {
-        ...state,
-        players: updatedPlayers,
-        dartsThrown: state.dartsThrown - 1
-      };
+      return newState;
     }
 
     case 'NEXT_PLAYER': {
-      const currentPlayer = state.players[state.currentPlayerIndex];
-      
-      // Clone player data
-      const updatedPlayers = [...state.players];
-      const updatedPlayer = { ...currentPlayer };
-      updatedPlayers[state.currentPlayerIndex] = updatedPlayer;
+      // Clone state and players
+      const newState = JSON.parse(JSON.stringify(state));
+      const updatedPlayer = newState.players[newState.currentPlayerIndex];
       
       // Add current throws to history even if less than 3
       if (updatedPlayer.throws.length > 0) {
@@ -269,28 +331,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           updatedPlayer.throws.push(0);
         }
         
-        updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
+        updatedPlayer.history.push([...updatedPlayer.throws]);
         updatedPlayer.throws = [];
         
         // Calculate average
         const totalThrows = updatedPlayer.history.flat();
         updatedPlayer.average = totalThrows.length > 0 
-          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
+          ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
           : 0;
       }
       
-      return {
-        ...state,
-        players: updatedPlayers,
-        currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-        round: state.currentPlayerIndex === state.players.length - 1 ? state.round + 1 : state.round,
-        dartsThrown: 0
-      };
+      // Calculate next player index and update turn count if needed
+      const nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+      if (nextPlayerIndex === 0) {
+        newState.options.turnCount += 1;
+        newState.round += 1;
+      }
+      
+      newState.currentPlayerIndex = nextPlayerIndex;
+      newState.dartsThrown = 0;
+      
+      return newState;
     }
 
     default:
       return state;
   }
+}
+
+// Helper function to check if a score is a double
+function isDouble(score: number): boolean {
+  // Handle bullseye (50) as a double
+  if (score === 50) return true;
+  
+  // Check even numbers from 2 to 40 (all possible doubles)
+  return score % 2 === 0 && score >= 2 && score <= 40 && (score / 2) <= 20;
 }
 
 // Context provider

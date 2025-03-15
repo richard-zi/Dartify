@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
+import { getAllPossibleCheckouts, isCheckoutRange } from '../../utils/dartLogic';
 
 interface ScoreInputProps {
   onScoreSubmit: (score: number) => void;
@@ -8,6 +9,7 @@ interface ScoreInputProps {
   dartsThrown: number;
   currentScore: number;
   gameType: string;
+  doubleOut: boolean;
 }
 
 const ScoreInput: React.FC<ScoreInputProps> = ({
@@ -17,10 +19,22 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   dartsThrown,
   currentScore,
   gameType,
+  doubleOut
 }) => {
   const [manualScore, setManualScore] = useState<string>('');
   const [showQuickScores, setShowQuickScores] = useState<boolean>(true);
+  const [checkoutOptions, setCheckoutOptions] = useState<Array<{value: number, label: string}>>([]);
   
+  // Update checkout options whenever the score changes
+  useEffect(() => {
+    if (isCheckoutRange(currentScore, doubleOut)) {
+      const options = getAllPossibleCheckouts(currentScore, doubleOut);
+      setCheckoutOptions(options);
+    } else {
+      setCheckoutOptions([]);
+    }
+  }, [currentScore, doubleOut]);
+
   // Single dart score options for quick input
   const quickScores = [
     { value: 60, label: 'T20' },
@@ -39,32 +53,6 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
     { value: 16, label: '16' },
     { value: 0, label: 'Miss' },
   ];
-  
-  // Possible checkout options based on current score
-  const getCheckoutOptions = () => {
-    if ((gameType === '501' || gameType === '301') && currentScore <= 170) {
-      const checkoutScores = [];
-      
-      // Direct doubles for checkouts
-      if (currentScore <= 40 && currentScore % 2 === 0) {
-        checkoutScores.push({ value: currentScore, label: `D${currentScore / 2}` });
-      }
-      
-      // Special checkout combinations
-      if (currentScore === 170) checkoutScores.push({ value: 60, label: 'T20 → T20 → Bull' });
-      if (currentScore === 167) checkoutScores.push({ value: 57, label: 'T19 → T20 → Bull' });
-      if (currentScore === 164) checkoutScores.push({ value: 54, label: 'T18 → T20 → Bull' });
-      if (currentScore === 160) checkoutScores.push({ value: 60, label: 'T20 → T20 → D20' });
-      if (currentScore === 161) checkoutScores.push({ value: 60, label: 'T20 → T17 → Bull' });
-      if (currentScore === 130) checkoutScores.push({ value: 60, label: 'T20 → T18 → D8' });
-      if (currentScore === 136) checkoutScores.push({ value: 60, label: 'T20 → T20 → D8' });
-      if (currentScore === 100) checkoutScores.push({ value: 60, label: 'T20 → D20' });
-      
-      return checkoutScores.length > 0 ? checkoutScores : null;
-    }
-    
-    return null;
-  };
 
   const handleManualScoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,10 +67,8 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
     onScoreSubmit(score);
   };
 
-  const checkoutOptions = getCheckoutOptions();
-  
   // Determine if we're in checkout range and highlight it
-  const isCheckoutRange = (gameType === '501' || gameType === '301') && currentScore <= 170 && currentScore > 1;
+  const isInCheckoutRange = isCheckoutRange(currentScore, doubleOut);
 
   return (
     <div className="bg-white rounded-lg border border-gray-100 p-4">
@@ -124,18 +110,18 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
       </form>
       
       {/* Checkout options if available */}
-      {isCheckoutRange && (
-        <div className={`mb-4 p-3 rounded ${checkoutOptions ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
+      {isInCheckoutRange && (
+        <div className="mb-4 p-3 rounded bg-green-50 border border-green-100">
           <p className="text-sm font-medium text-green-800 mb-2">
             <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-1"></span>
-            Checkout possible: {getCheckoutSuggestion(currentScore)}
+            Checkout possible: {getCheckoutSuggestion(currentScore, doubleOut)}
           </p>
           
-          {checkoutOptions && (
+          {checkoutOptions.length > 0 && (
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {checkoutOptions.map(option => (
+              {checkoutOptions.map((option, idx) => (
                 <button
-                  key={option.value}
+                  key={`checkout-${idx}-${option.value}`}
                   onClick={() => handleQuickScoreClick(option.value)}
                   className="bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-sm text-green-800 border border-green-200 transition-colors"
                 >
@@ -185,7 +171,6 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
         <Button 
           onClick={onUndoThrow} 
           variant="secondary"
-          disabled={dartsThrown === 0}
         >
           Undo
         </Button>
@@ -202,11 +187,17 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
         <div className="mt-4 pt-3 border-t border-gray-100 text-sm">
           <p className="flex justify-between">
             <span className="text-gray-600">Remaining Points:</span> 
-            <span className={`font-bold ${isCheckoutRange ? 'text-green-600' : 'text-gray-800'}`}>{currentScore}</span>
+            <span className={`font-bold ${isInCheckoutRange ? 'text-green-600' : 'text-gray-800'}`}>{currentScore}</span>
+          </p>
+          
+          {/* Display checkout mode */}
+          <p className="flex justify-between mt-1">
+            <span className="text-gray-600">Checkout Mode:</span>
+            <span className="font-medium">{doubleOut ? 'Double Out' : 'Any Finish'}</span>
           </p>
           
           {/* Display if we're getting close to checkout but not yet there */}
-          {!isCheckoutRange && currentScore > 170 && currentScore <= 230 && (
+          {!isInCheckoutRange && currentScore > 170 && currentScore <= 230 && (
             <p className="text-indigo-600 mt-1 text-xs">
               {currentScore - 170} points until possible checkout
             </p>
@@ -218,7 +209,19 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
 };
 
 // Helper function to suggest checkout combinations
-function getCheckoutSuggestion(score: number): string {
+function getCheckoutSuggestion(score: number, doubleRequired: boolean): string {
+  if (!doubleRequired) {
+    // Simple suggestions for non-double-out mode
+    if (score <= 20) return `${score}`;
+    if (score === 25) return '25';
+    if (score === 50) return 'Bull';
+    if (score <= 40) return `D${score/2}`;
+    if (score <= 60) return `T${Math.floor(score/3)}`;
+    
+    return 'Custom';
+  }
+  
+  // Standard checkouts for double-out mode
   const checkouts: Record<number, string> = {
     170: 'T20 T20 Bull',
     167: 'T20 T19 Bull',

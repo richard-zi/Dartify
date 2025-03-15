@@ -6,6 +6,7 @@ interface PlayerStatisticsProps {
   players: Player[];
   winner: Player;
   gameType: GameType;
+  doubleOut: boolean;
   onNewGame: () => void;
   onEndGame: () => void;
 }
@@ -14,6 +15,7 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
   players,
   winner,
   gameType,
+  doubleOut,
   onNewGame,
   onEndGame
 }) => {
@@ -91,6 +93,14 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
             ))}
           </div>
         )}
+
+        {/* Show turns needed for checkout */}
+        {winner.turnCount !== undefined && (
+          <div className="mt-2">
+            <span className="text-gray-700">Turns to checkout: </span>
+            <span className="font-medium text-indigo-700">{winner.turnCount}</span>
+          </div>
+        )}
       </div>
       
       <div className="mb-6">
@@ -107,6 +117,9 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">60+</th>
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">100+</th>
                 <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miss %</th>
+                {winner.turnCount !== undefined && (
+                  <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turns</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -148,6 +161,11 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="text-gray-900">{player.missPercentage.toFixed(1)}%</div>
                   </td>
+                  {winner.turnCount !== undefined && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-gray-900">{player.id === winner.id ? player.turnCount : '-'}</div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -158,7 +176,7 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
       <div className="mt-8">
         <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Game Summary</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500">Total Rounds</div>
             <div className="text-2xl font-bold text-gray-800">{players[0]?.history.length || 0}</div>
@@ -170,18 +188,13 @@ const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({
           </div>
           
           <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="text-sm text-gray-500">Checkout Mode</div>
+            <div className="text-2xl font-bold text-gray-800">{doubleOut ? 'Double Out' : 'Any Finish'}</div>
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500">Players</div>
             <div className="text-2xl font-bold text-gray-800">{players.length}</div>
-          </div>
-        </div>
-        
-        {/* Performance chart visualization would go here in a real app */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-6 h-48 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <svg className="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4m1 5v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7m14-2l-3-3-3 3-4-4" />
-            </svg>
-            <p>Performance Chart (Visualization)</p>
           </div>
         </div>
       </div>

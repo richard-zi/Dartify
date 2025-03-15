@@ -1,13 +1,15 @@
 import React from 'react';
 import { Player } from '../../types';
+import { isCheckoutRange } from '../../utils/dartLogic';
 
 interface PlayerCardProps {
   player: Player;
   isActive: boolean;
   isWinner: boolean;
+  doubleOut: boolean;
 }
 
-const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) => {
+const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner, doubleOut }) => {
   // Generate background based on status
   const getBgColor = () => {
     if (isWinner) return 'bg-green-50 border-green-400';
@@ -16,13 +18,22 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
   };
 
   // Determine if player is in checkout range
-  const isCheckoutRange = (player.score <= 170 && player.score > 1);
+  const isInCheckoutRange = isCheckoutRange(player.score, doubleOut);
   
   // Get checkout suggestion if in range
   const getCheckoutSuggestion = (score: number): string | null => {
-    if (score > 170 || score <= 1) return null;
+    if ((doubleOut && (score > 170 || score <= 1)) || (!doubleOut && score > 170)) {
+      return null;
+    }
     
     // Just provide a few common checkouts for demonstration
+    if (!doubleOut) {
+      if (score <= 20) return `${score}`;
+      if (score === 25) return '25';
+      if (score === 50) return 'Bull';
+      return 'Custom';
+    }
+    
     const checkouts: Record<number, string> = {
       170: 'T20 T20 Bull',
       167: 'T20 T19 Bull',
@@ -63,9 +74,9 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
       <div className="flex justify-between items-center">
         <div>
           <span className="text-gray-500 text-sm">Points</span>
-          <div className={`text-3xl font-bold ${isCheckoutRange ? 'text-green-600' : 'text-gray-800'}`}>
+          <div className={`text-3xl font-bold ${isInCheckoutRange ? 'text-green-600' : 'text-gray-800'}`}>
             {player.score}
-            {isCheckoutRange && (
+            {isInCheckoutRange && !isWinner && (
               <span className="ml-2 text-xs inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full">
                 Checkout
               </span>
@@ -117,7 +128,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
       )}
 
       {/* Checkout suggestion if applicable */}
-      {isCheckoutRange && !isWinner && (
+      {isInCheckoutRange && !isWinner && (
         <div className="mt-3 p-2 bg-green-50 rounded-md border border-green-100">
           <span className="text-sm font-medium text-green-800">Recommended Checkout:</span>
           <div className="font-medium text-green-800 mt-1">
@@ -127,18 +138,23 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
       )}
 
       {/* Checkout if applicable */}
-      {player.checkout && (
+      {isWinner && player.checkout && (
         <div className="mt-3 p-2 bg-green-50 rounded-md border border-green-100">
           <span className="text-sm font-medium text-green-800">Checkout:</span>
-          <div className="flex space-x-2 mt-1">
-            {player.checkout.map((score, i) => (
-              <span 
-                key={i} 
-                className="inline-block bg-green-100 px-2 py-1 rounded-full text-sm font-medium text-green-800"
-              >
-                {score}
-              </span>
-            ))}
+          <div className="flex flex-col mt-1">
+            <div className="flex space-x-2">
+              {player.checkout.map((score, i) => (
+                <span 
+                  key={i} 
+                  className="inline-block bg-green-100 px-2 py-1 rounded-full text-sm font-medium text-green-800"
+                >
+                  {score}
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 text-sm text-green-800">
+              <span className="font-medium">Turns to checkout:</span> {player.turnCount}
+            </div>
           </div>
         </div>
       )}

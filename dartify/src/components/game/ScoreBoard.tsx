@@ -6,12 +6,14 @@ interface ScoreBoardProps {
   players: Player[];
   currentPlayerIndex: number;
   winner: Player | null;
+  doubleOut: boolean;
 }
 
 const ScoreBoard: React.FC<ScoreBoardProps> = ({
   players,
   currentPlayerIndex,
   winner,
+  doubleOut
 }) => {
   return (
     <div className="w-full">
@@ -24,6 +26,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
             player={player}
             isActive={index === currentPlayerIndex && !winner}
             isWinner={winner ? player.id === winner.id : false}
+            doubleOut={doubleOut}
           />
         ))}
       </div>
