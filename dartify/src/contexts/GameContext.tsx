@@ -124,7 +124,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           // Calculate average
           const totalThrows = updatedPlayer.history.flat();
           updatedPlayer.average = totalThrows.length > 0 
-            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length 
+            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
             : 0;
           
           return {
@@ -150,7 +150,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           // Calculate average
           const totalThrows = [...updatedPlayer.history.flat()];
           updatedPlayer.average = totalThrows.length > 0 
-            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length 
+            ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
             : 0;
           
           return {
@@ -170,10 +170,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
         updatedPlayer.throws = [];
         
-        // Calculate average
+        // Calculate average (per dart thrown)
         const totalThrows = updatedPlayer.history.flat();
         updatedPlayer.average = totalThrows.length > 0 
-          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length 
+          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
           : 0;
         
         return {
@@ -275,7 +275,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Calculate average
         const totalThrows = updatedPlayer.history.flat();
         updatedPlayer.average = totalThrows.length > 0 
-          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length 
+          ? totalThrows.reduce((sum, score) => sum + score, 0) / totalThrows.length * 3
           : 0;
       }
       

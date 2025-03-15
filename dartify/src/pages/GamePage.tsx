@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import CameraView from '../components/camera/CameraView';
@@ -11,11 +11,13 @@ import Button from '../components/ui/Button';
 import { GameType } from '../types';
 import { useGame } from '../contexts/GameContext';
 import { useCamera } from '../hooks/useCamera';
+import { isCheckoutRange, getCheckoutSuggestionDetails } from '../utils/dartLogic';
 
 const GamePage: React.FC = () => {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
   const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [showCheckoutHint, setShowCheckoutHint] = useState(false);
   
   const {
     isActive: isCameraActive,
@@ -33,6 +35,20 @@ const GamePage: React.FC = () => {
   
   // Get current player
   const currentPlayer = state.players[state.currentPlayerIndex] || null;
+  
+  // Check if current player is in checkout range
+  useEffect(() => {
+    if (currentPlayer && isCheckoutRange(currentPlayer.score)) {
+      setShowCheckoutHint(true);
+      // Hide the hint after 3 seconds
+      const timer = setTimeout(() => {
+        setShowCheckoutHint(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowCheckoutHint(false);
+    }
+  }, [currentPlayer]);
 
   // Handle start game
   const handleStartGame = (gameType: GameType) => {
@@ -52,7 +68,12 @@ const GamePage: React.FC = () => {
 
   // Handle score submission
   const handleScoreSubmit = (score: number) => {
-    // Verwende simulateDetection hier, um den Warnhinweis zu beseitigen
+    // Limit score to a single dart (max 60)
+    if (score > 60) {
+      score = 60;
+    }
+    
+    // Use simulateDetection to satisfy the TypeScript warning
     if (score === 0 && isDetecting) {
       score = simulateDetection();
     }
@@ -83,6 +104,9 @@ const GamePage: React.FC = () => {
       startCamera();
     }
   };
+  
+  // Get checkout details if available
+  const checkoutDetails = currentPlayer ? getCheckoutSuggestionDetails(currentPlayer.score) : null;
 
   return (
     <Layout>
@@ -104,6 +128,21 @@ const GamePage: React.FC = () => {
             <p className="font-medium">Wähle einen Spielmodus, um zu beginnen.</p>
           </div>
         ) : null}
+        
+        {/* Checkout Hint Toast */}
+        {showCheckoutHint && currentPlayer && checkoutDetails?.isCheckout && (
+          <div className="fixed bottom-4 right-4 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded shadow-lg z-50 animate-bounce">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <div>
+                <p className="font-bold">Checkout möglich!</p>
+                <p>{checkoutDetails.sequence}</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Main Game Interface */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

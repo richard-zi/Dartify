@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { GameType } from '../../types';
-import { useGame } from '../../contexts/GameContext';
 
+// Define the props interface explicitly
 interface GameControlsProps {
   onStartGame: (gameType: GameType) => void;
   onResetGame: () => void;
@@ -17,7 +17,6 @@ const GameControls: React.FC<GameControlsProps> = ({
   onEndGame,
   isGameActive,
 }) => {
-  const { state } = useGame();
   const [showStartModal, setShowStartModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
@@ -42,7 +41,6 @@ const GameControls: React.FC<GameControlsProps> = ({
             onClick={() => setShowStartModal(true)}
             variant="primary"
             fullWidth
-            disabled={state.players.length < 1}
           >
             Spiel starten
           </Button>
@@ -71,9 +69,9 @@ const GameControls: React.FC<GameControlsProps> = ({
       {isGameActive && (
         <div className="mt-4 p-3 bg-gray-100 rounded">
           <p className="text-sm font-medium">Aktives Spiel:</p>
-          <p className="text-lg font-bold">{state.gameType}</p>
+          <p className="text-lg font-bold">{"501"}</p>
           <p className="text-sm">
-            Runde: {state.round} | Spieler: {state.players.length}
+            Runde: {1} | Spieler: {0}
           </p>
         </div>
       )}

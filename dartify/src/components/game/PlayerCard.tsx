@@ -15,6 +15,29 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
     return 'bg-white';
   };
 
+  // Determine if player is in checkout range
+  const isCheckoutRange = (player.score <= 170 && player.score > 1);
+  
+  // Get checkout suggestion if in range
+  const getCheckoutSuggestion = (score: number): string | null => {
+    if (score > 170 || score <= 1) return null;
+    
+    // Just provide a few common checkouts for demonstration
+    const checkouts: Record<number, string> = {
+      170: 'T20 T20 Bull',
+      167: 'T20 T19 Bull',
+      160: 'T20 T20 D20',
+      136: 'T20 T20 D8',
+      100: 'T20 D20',
+      50: 'Bull',
+      40: 'D20',
+      36: 'D18',
+      32: 'D16',
+    };
+    
+    return checkouts[score] || 'Möglich';
+  };
+
   return (
     <div 
       className={`rounded-lg border shadow p-4 transition-all ${getBgColor()}`}
@@ -40,7 +63,14 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
       <div className="flex justify-between items-center">
         <div>
           <span className="text-gray-500 text-sm">Punkte</span>
-          <div className="text-3xl font-bold">{player.score}</div>
+          <div className={`text-3xl font-bold ${isCheckoutRange ? 'text-green-600' : ''}`}>
+            {player.score}
+            {isCheckoutRange && (
+              <span className="ml-2 text-xs inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                Checkout
+              </span>
+            )}
+          </div>
         </div>
         <div>
           <span className="text-gray-500 text-sm">Durchschnitt</span>
@@ -82,6 +112,16 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner }) =
                 {score}
               </span>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Checkout suggestion if applicable */}
+      {isCheckoutRange && !isWinner && (
+        <div className="mt-3 p-2 bg-green-100 rounded">
+          <span className="text-sm font-medium text-green-800">Empfohlener Checkout:</span>
+          <div className="font-medium text-green-800 mt-1">
+            {getCheckoutSuggestion(player.score)}
           </div>
         </div>
       )}

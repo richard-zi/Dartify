@@ -21,42 +21,44 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   const [manualScore, setManualScore] = useState<string>('');
   const [showQuickScores, setShowQuickScores] = useState<boolean>(true);
   
-  // Gängige Punktzahlen für schnelle Eingabe
+  // Single dart score options for quick input
   const quickScores = [
-    { value: 180, label: '180' },
-    { value: 140, label: '140' },
-    { value: 100, label: '100' },
     { value: 60, label: 'T20' },
     { value: 57, label: 'T19' },
     { value: 54, label: 'T18' },
+    { value: 51, label: 'T17' },
     { value: 50, label: 'Bull' },
     { value: 40, label: 'D20' },
     { value: 38, label: 'D19' },
     { value: 36, label: 'D18' },
-    { value: 26, label: 'D13' },
     { value: 25, label: '25' },
     { value: 20, label: '20' },
     { value: 19, label: '19' },
     { value: 18, label: '18' },
+    { value: 17, label: '17' },
+    { value: 16, label: '16' },
     { value: 0, label: 'Miss' },
   ];
   
-  // Mögliche Checkout-Optionen basierend auf aktuellem Score
+  // Possible checkout options based on current score
   const getCheckoutOptions = () => {
     if ((gameType === '501' || gameType === '301') && currentScore <= 170) {
       const checkoutScores = [];
       
-      // Füge häufige Checkout-Kombinationen hinzu
-      if (currentScore === 170) checkoutScores.push({ value: 170, label: 'T20 T20 Bull' });
-      if (currentScore === 160) checkoutScores.push({ value: 160, label: 'T20 T20 D20' });
-      if (currentScore === 136) checkoutScores.push({ value: 136, label: 'T20 T20 D8' });
-      if (currentScore === 100) checkoutScores.push({ value: 100, label: 'T20 D20' });
-      if (currentScore === 50) checkoutScores.push({ value: 50, label: 'Bull' });
-      
-      // Für direkte Doubles
+      // Direct doubles for checkouts
       if (currentScore <= 40 && currentScore % 2 === 0) {
         checkoutScores.push({ value: currentScore, label: `D${currentScore / 2}` });
       }
+      
+      // Special checkout combinations
+      if (currentScore === 170) checkoutScores.push({ value: 60, label: 'T20 → T20 → Bull' });
+      if (currentScore === 167) checkoutScores.push({ value: 57, label: 'T19 → T20 → Bull' });
+      if (currentScore === 164) checkoutScores.push({ value: 54, label: 'T18 → T20 → Bull' });
+      if (currentScore === 160) checkoutScores.push({ value: 60, label: 'T20 → T20 → D20' });
+      if (currentScore === 161) checkoutScores.push({ value: 60, label: 'T20 → T17 → Bull' });
+      if (currentScore === 130) checkoutScores.push({ value: 60, label: 'T20 → T18 → D8' });
+      if (currentScore === 136) checkoutScores.push({ value: 60, label: 'T20 → T20 → D8' });
+      if (currentScore === 100) checkoutScores.push({ value: 60, label: 'T20 → D20' });
       
       return checkoutScores.length > 0 ? checkoutScores : null;
     }
@@ -67,7 +69,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   const handleManualScoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const score = parseInt(manualScore);
-    if (!isNaN(score) && score >= 0 && score <= 180) {
+    if (!isNaN(score) && score >= 0 && score <= 60) {
       onScoreSubmit(score);
       setManualScore('');
     }
@@ -78,6 +80,9 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   };
 
   const checkoutOptions = getCheckoutOptions();
+  
+  // Determine if we're in checkout range and highlight it
+  const isCheckoutRange = (gameType === '501' || gameType === '301') && currentScore <= 170 && currentScore > 1;
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -102,10 +107,10 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
           <input
             type="number"
             min="0"
-            max="180"
+            max="60"
             value={manualScore}
             onChange={(e) => setManualScore(e.target.value)}
-            placeholder="Punkte eingeben (0-180)"
+            placeholder="Punkte eingeben (0-60)"
             className="border rounded px-3 py-2 w-full"
             autoFocus
           />
@@ -113,23 +118,32 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
             Eintragen
           </Button>
         </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Gib Punkte für einen einzelnen Wurf ein (0-60).
+        </p>
       </form>
       
       {/* Checkout options if available */}
-      {checkoutOptions && (
-        <div className="mb-4">
-          <p className="text-sm font-medium text-green-600 mb-2">Mögliche Checkouts:</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {checkoutOptions.map(option => (
-              <button
-                key={option.value}
-                onClick={() => handleQuickScoreClick(option.value)}
-                className="bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-sm text-green-800 border border-green-300"
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+      {isCheckoutRange && (
+        <div className={`mb-4 p-3 rounded ${checkoutOptions ? 'bg-green-100 border border-green-300' : 'bg-yellow-50 border border-yellow-200'}`}>
+          <p className="text-sm font-medium text-green-800 mb-2">
+            <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span>
+            Checkout möglich: {getCheckoutSuggestion(currentScore)}
+          </p>
+          
+          {checkoutOptions && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {checkoutOptions.map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => handleQuickScoreClick(option.value)}
+                  className="bg-green-200 hover:bg-green-300 px-2 py-1 rounded text-sm text-green-800 border border-green-300 transition-colors"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       
@@ -153,12 +167,12 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
       
       {/* Quick score buttons */}
       {showQuickScores && (
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-5 gap-2 mb-4">
           {quickScores.map(score => (
             <button
               key={score.value}
               onClick={() => handleQuickScoreClick(score.value)}
-              className="bg-gray-100 hover:bg-gray-200 px-2 py-2 rounded text-sm font-medium"
+              className="bg-gray-100 hover:bg-gray-200 px-2 py-2 rounded text-sm font-medium transition-colors"
             >
               {score.label}
             </button>
@@ -186,12 +200,15 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
       {/* Game info */}
       {(gameType === '501' || gameType === '301') && (
         <div className="mt-4 pt-3 border-t text-sm">
-          <p>
-            Verbleibende Punkte: <span className="font-bold">{currentScore}</span>
+          <p className="flex justify-between">
+            <span>Verbleibende Punkte:</span> 
+            <span className={`font-bold ${isCheckoutRange ? 'text-green-600' : ''}`}>{currentScore}</span>
           </p>
-          {currentScore <= 170 && (
-            <p className="text-green-600 mt-1">
-              Möglicher Checkout: {getCheckoutSuggestion(currentScore)}
+          
+          {/* Display if we're getting close to checkout but not yet there */}
+          {!isCheckoutRange && currentScore > 170 && currentScore <= 230 && (
+            <p className="text-blue-600 mt-1 text-xs">
+              Noch {currentScore - 170} Punkte bis zum möglichen Checkout
             </p>
           )}
         </div>
