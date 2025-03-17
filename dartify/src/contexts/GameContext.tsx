@@ -125,23 +125,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newThrow = action.payload.score;
       updatedPlayer.throws = [...updatedPlayer.throws, newThrow];
       
+      let newDartsThrown = state.dartsThrown + 1;
+      let nextPlayerIndex = state.currentPlayerIndex;
+      let nextRound = state.round;
+      
       // For 01 games, subtract score; for Cricket, handle differently
       if (state.gameType === "501" || state.gameType === "301") {
         // Calculate the new score
         const newScore = updatedPlayer.score - newThrow;
         
-        // Check if this would be a bust (score < 0 or score = 1)
-        // In non-double-out mode, we only check if the score goes below 0
+        // Check if this would be a bust (score < 0 or score = 1 or odd number in double-out mode)
         const isBust = state.options.doubleOut 
-          ? (newScore < 0 || newScore === 1) 
+          ? (newScore < 0 || newScore === 1 || (newScore % 2 !== 0 && newScore !== 50 && newScore !== 0)) 
           : (newScore < 0);
         
-        // Check for invalid finish (if doubleOut is required but last dart is not a double)
-        const isInvalidFinish = state.options.doubleOut && 
-          newScore === 0 && 
-          !isDouble(newThrow);
-        
-        if (isBust || isInvalidFinish) {
+        if (isBust) {
           // Bust - this throw doesn't count, move to next player
           updatedPlayer.throws.pop(); // Remove the last throw
           
@@ -157,12 +155,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
             : 0;
           
+          // Move to next player
+          nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+          nextRound = nextPlayerIndex === 0 ? state.round + 1 : state.round;
+          newDartsThrown = 0;
+          
           return {
             ...state,
             players: updatedPlayers,
-            currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-            round: state.currentPlayerIndex === state.players.length - 1 ? state.round + 1 : state.round,
-            dartsThrown: 0
+            currentPlayerIndex: nextPlayerIndex,
+            round: nextRound,
+            dartsThrown: newDartsThrown
           };
         }
         
@@ -174,31 +177,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           // In doubleOut mode, last dart must be a double
           if (state.options.doubleOut && !isDouble(newThrow)) {
             // If not a double, treat as a bust
-            updatedPlayer.score = updatedPlayer.score + newThrow;
-            updatedPlayer.throws.pop();
+            updatedPlayer.score = updatedPlayer.score + newThrow; // Restore original score
+            updatedPlayer.throws.pop(); // Remove the invalid throw
             
             // If we've thrown 3 darts, move to next player
-            if (updatedPlayer.throws.length === 3) {
+            if (newDartsThrown >= 3) {
               updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
               updatedPlayer.throws = [];
+              
+              // Move to next player
+              nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+              nextRound = nextPlayerIndex === 0 ? state.round + 1 : state.round;
+              newDartsThrown = 0;
               
               return {
                 ...state,
                 players: updatedPlayers,
-                currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-                round: state.currentPlayerIndex === state.players.length - 1 ? state.round + 1 : state.round,
-                dartsThrown: 0
+                currentPlayerIndex: nextPlayerIndex,
+                round: nextRound,
+                dartsThrown: newDartsThrown
               };
             }
             
             return {
               ...state,
               players: updatedPlayers,
-              dartsThrown: state.dartsThrown + 1
+              dartsThrown: newDartsThrown
             };
           }
           
-          // Record checkout
+          // Valid checkout
           updatedPlayer.checkout = [...updatedPlayer.throws];
           updatedPlayer.turnCount = state.options.turnCount + 1; // Include current turn
           
@@ -216,7 +224,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             players: updatedPlayers,
             isGameOver: true,
             winner: updatedPlayer,
-            dartsThrown: state.dartsThrown + 1
+            dartsThrown: newDartsThrown
           };
         }
       } else {
@@ -224,7 +232,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Handle end of player's turn (3 darts thrown)
-      if (updatedPlayer.throws.length === 3) {
+      if (newDartsThrown >= 3) {
         updatedPlayer.history = [...updatedPlayer.history, [...updatedPlayer.throws]];
         updatedPlayer.throws = [];
         
@@ -234,20 +242,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ? totalThrows.reduce((sum: number, score: number) => sum + score, 0) / totalThrows.length * 3
           : 0;
         
-        // Calculate next turn and round
-        const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
-        const nextRound = nextPlayerIndex === 0 ? state.round + 1 : state.round;
-        const nextTurnCount = nextPlayerIndex === 0 ? state.options.turnCount + 1 : state.options.turnCount;
+        // Move to next player
+        nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+        nextRound = nextPlayerIndex === 0 ? state.round + 1 : state.round;
+        newDartsThrown = 0;
         
         return {
           ...state,
           players: updatedPlayers,
           currentPlayerIndex: nextPlayerIndex,
           round: nextRound,
-          dartsThrown: 0,
+          dartsThrown: newDartsThrown,
           options: {
             ...state.options,
-            turnCount: nextTurnCount
+            turnCount: nextPlayerIndex === 0 ? state.options.turnCount + 1 : state.options.turnCount
           }
         };
       }
@@ -256,7 +264,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         players: updatedPlayers,
-        dartsThrown: state.dartsThrown + 1
+        dartsThrown: newDartsThrown
       };
     }
 

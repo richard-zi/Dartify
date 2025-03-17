@@ -140,9 +140,11 @@ export function getAllDartSections() {
 // Check if score is in checkout range
 export function isCheckoutRange(score: number, doubleRequired: boolean = true): boolean {
   if (doubleRequired) {
-    return score <= 170 && score > 1 && (score % 2 === 0 || score === 50);
+    // In double-out mode, any score <= 170 and > 1 is in checkout range
+    // (even if odd numbers require an extra dart first)
+    return score <= 170 && score > 1;
   } else {
-    // In non-double-out mode, any score <= 60 is theoretically checkable with 1 dart
+    // In non-double-out mode, any score <= 170 is theoretically checkable
     return score <= 170 && score > 0;
   }
 }

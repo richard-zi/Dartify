@@ -286,6 +286,7 @@ const GamePage: React.FC = () => {
                 doubleOut={state.options.doubleOut}
               />
               
+              
               {/* Camera Feed */}
               <div className="mt-6">
                 <h2 className="text-xl font-bold mb-3 text-gray-800">Camera</h2>
