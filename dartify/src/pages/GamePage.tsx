@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import CameraView from '../components/camera/CameraView';
+import CameraView from '../components/camera/CameraView'; // Add this import
+import EnhancedCameraView from '../components/camera/EnhancedCameraView';
 import CameraControls from '../components/camera/CameraControls';
 import ScoreBoard from '../components/game/ScoreBoard';
 import ScoreInput from '../components/game/ScoreInput';
@@ -20,7 +21,9 @@ const GamePage: React.FC = () => {
   const [doubleOut, setDoubleOut] = useState<boolean>(true);
   const [effectivelyActive, setEffectivelyActive] = useState<boolean>(false);
   const [isProcessingScore, setIsProcessingScore] = useState<boolean>(false);
+  const [useAdvancedCamera, setUseAdvancedCamera] = useState<boolean>(true);
   
+  // Simple camera hook for backward compatibility
   const {
     isActive: isCameraActive,
     isDetecting,
@@ -254,6 +257,27 @@ const GamePage: React.FC = () => {
               </p>
             </div>
             
+            {/* Camera Mode Selection */}
+            <div className="mb-6 p-4 border rounded-lg border-gray-200">
+              <h3 className="font-bold text-lg text-gray-800 mb-2">Camera Options</h3>
+              <div className="flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={useAdvancedCamera}
+                    onChange={() => setUseAdvancedCamera(!useAdvancedCamera)}
+                    className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                  />
+                  <span className="ml-2 text-gray-700">Use AI-powered dart detection</span>
+                </label>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {useAdvancedCamera 
+                  ? "Advanced mode: Using computer vision to detect dart positions on the board." 
+                  : "Basic mode: Using simulated dart detection for demonstration."}
+              </p>
+            </div>
+            
             <div className="flex justify-between">
               <Button 
                 onClick={() => navigate('/setup')}
@@ -283,8 +307,7 @@ const GamePage: React.FC = () => {
             >
               Go to Player Setup
             </Button>
-          </div>
-        ) : null}
+          </div> ) : null}
         
         {/* Statistics Screen */}
         {gamePhase === 'statistics' && state.winner && (
@@ -316,10 +339,17 @@ const GamePage: React.FC = () => {
               <div className="mt-6">
                 <h2 className="text-xl font-bold mb-3 text-gray-800">Camera</h2>
                 <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <CameraView 
-                    onScoreDetected={handleScoreSubmit} 
-                    showControls={false}
-                  />
+                  {useAdvancedCamera ? (
+                    <EnhancedCameraView 
+                      onScoreDetected={handleScoreSubmit} 
+                      showControls={false}
+                    />
+                  ) : (
+                    <CameraView 
+                      onScoreDetected={handleScoreSubmit} 
+                      showControls={false}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -338,13 +368,25 @@ const GamePage: React.FC = () => {
                 />
                 
                 {/* Camera Controls */}
-                <CameraControls 
-                  onCameraToggle={handleCameraToggle}
-                  onDetectionToggle={toggleDetection}
-                  onManualScore={handleScoreSubmit}
-                  isActive={isCameraActive}
-                  isDetecting={isDetecting}
-                />
+                {useAdvancedCamera ? (
+                  <div className="bg-white rounded-lg border border-gray-100 p-4">
+                    <h3 className="text-lg font-medium mb-4 text-gray-800">Enhanced Camera Controls</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Using AI-powered dart detection. Use the controls in the camera view to manage detection.
+                    </p>
+                    <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+                      <p>To manually enter a score, use the Score Input panel below.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <CameraControls 
+                    onCameraToggle={handleCameraToggle}
+                    onDetectionToggle={toggleDetection}
+                    onManualScore={handleScoreSubmit}
+                    isActive={isCameraActive}
+                    isDetecting={isDetecting}
+                  />
+                )}
                 
                 {/* Score Input */}
                 {currentPlayer && (

@@ -1,0 +1,29 @@
+dartify/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py              # FastAPI application
+│   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   └── camera.py        # API endpoints for camera processing
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py        # Configuration settings
+│   │   │   └── exceptions.py    # Custom exceptions
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── camera_service.py     # Camera input handling
+│   │   │   ├── detection_service.py  # Dart detection using YOLO
+│   │   │   ├── tracking_service.py   # Tracking using supervision
+│   │   │   └── scoring_service.py    # Score calculation
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── dart.py          # Data models for darts
+│   │   │   └── score.py         # Data models for scores
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       ├── dartboard_segmentation.py  # Dartboard section identification
+│   │       └── image_processing.py  # Image preprocessing
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env
