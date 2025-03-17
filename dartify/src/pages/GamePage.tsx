@@ -15,7 +15,6 @@ import { useCamera } from '../hooks/useCamera';
 const GamePage: React.FC = () => {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
-  // Remove the showCheckoutHint state since we're removing the popup
   const [gamePhase, setGamePhase] = useState<'selection' | 'active' | 'statistics'>('selection');
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
   const [doubleOut, setDoubleOut] = useState<boolean>(true);
@@ -45,8 +44,6 @@ const GamePage: React.FC = () => {
       setGamePhase('selection');
     }
   }, [isGameActive, state.isGameOver, state.players.length, state.winner]);
-  
-  // Remove the useEffect for the showCheckoutHint state
 
   // Handle start game
   const handleStartGame = (gameType: GameType) => {
@@ -62,13 +59,6 @@ const GamePage: React.FC = () => {
     });
     setEffectivelyActive(true);
     setGamePhase('active');
-  };
-
-  // Handle reset game
-  const handleResetGame = () => {
-    dispatch({ type: 'RESET_GAME' });
-    setEffectivelyActive(false);
-    setGamePhase('selection');
   };
 
   // Handle start new game
@@ -284,8 +274,6 @@ const GamePage: React.FC = () => {
           </div>
         )}
         
-        {/* CHECKOUT POPUP REMOVED */}
-        
         {/* Main Game Interface */}
         {gamePhase === 'active' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -313,9 +301,8 @@ const GamePage: React.FC = () => {
             {/* Right Column - Controls */}
             <div>
               <div className="space-y-6">
-                {/* Game Controls */}
+                {/* Game Controls - REMOVED onResetGame prop */}
                 <GameControls 
-                  onResetGame={handleResetGame}
                   onEndGame={handleEndGame}
                   isGameActive={isGameActive}
                   gameType={state.gameType}

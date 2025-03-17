@@ -4,7 +4,6 @@ import Modal from '../ui/Modal';
 import { GameType } from '../../types';
 
 interface GameControlsProps {
-  onResetGame: () => void;
   onEndGame: () => void;
   isGameActive: boolean;
   gameType: GameType;
@@ -14,7 +13,6 @@ interface GameControlsProps {
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
-  onResetGame,
   onEndGame,
   isGameActive,
   gameType,
@@ -22,38 +20,28 @@ const GameControls: React.FC<GameControlsProps> = ({
   currentPlayerIndex,
   doubleOut
 }) => {
-  const [showResetModal, setShowResetModal] = useState(false);
+  const [showEndGameModal, setShowEndGameModal] = useState(false);
 
-  const handleResetConfirm = () => {
-    onResetGame();
-    setShowResetModal(false);
+  const handleEndGameConfirm = () => {
+    onEndGame();
+    setShowEndGameModal(false);
   };
 
   return (
     <div className="bg-white rounded-lg border border-gray-100 p-4">
       <h3 className="text-lg font-medium mb-4 text-gray-800">Game Controls</h3>
       
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {isGameActive ? (
-          <>
-            <Button
-              onClick={() => setShowResetModal(true)}
-              variant="secondary"
-              fullWidth
-            >
-              Reset
-            </Button>
-            
-            <Button
-              onClick={onEndGame}
-              variant="danger"
-              fullWidth
-            >
-              End Game
-            </Button>
-          </>
+          <Button
+            onClick={() => setShowEndGameModal(true)}
+            variant="danger"
+            fullWidth
+          >
+            End Game
+          </Button>
         ) : (
-          <div className="col-span-2">
+          <div>
             <p className="text-sm text-gray-500 mb-2">
               Select a game type to begin.
             </p>
@@ -75,31 +63,31 @@ const GameControls: React.FC<GameControlsProps> = ({
         </div>
       )}
       
-      {/* Reset confirmation modal */}
+      {/* End Game confirmation modal */}
       <Modal
-        isOpen={showResetModal}
-        onClose={() => setShowResetModal(false)}
-        title="Reset Game"
+        isOpen={showEndGameModal}
+        onClose={() => setShowEndGameModal(false)}
+        title="End Game"
         footer={
           <>
             <Button
-              onClick={() => setShowResetModal(false)}
+              onClick={() => setShowEndGameModal(false)}
               variant="secondary"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleResetConfirm}
+              onClick={handleEndGameConfirm}
               variant="danger"
             >
-              Reset
+              End Game
             </Button>
           </>
         }
       >
-        <p>Are you sure you want to reset the current game?</p>
+        <p>Are you sure you want to end the current game?</p>
         <p className="mt-2 text-sm text-gray-600">
-          The game will be restarted with the same players. All scores will be reset.
+          The game will be ended and all progress will be lost.
         </p>
       </Modal>
     </div>
