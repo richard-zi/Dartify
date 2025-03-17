@@ -1,6 +1,6 @@
 import React from 'react';
 import { Player } from '../../types';
-import { isCheckoutRange } from '../../utils/dartLogic';
+import { isCheckoutRange, getCheckoutSuggestionDetails } from '../../utils/dartLogic';
 
 interface PlayerCardProps {
   player: Player;
@@ -20,33 +20,20 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isActive, isWinner, dou
   // Determine if player is in checkout range
   const isInCheckoutRange = isCheckoutRange(player.score, doubleOut);
   
-  // Get checkout suggestion if in range
-  const getCheckoutSuggestion = (score: number): string | null => {
+  // Get proper checkout suggestion from dartLogic instead of simplified version
+  const getCheckoutSuggestion = (score: number): string => {
     if ((doubleOut && (score > 170 || score <= 1)) || (!doubleOut && score > 170)) {
-      return null;
+      return "No checkout possible";
     }
     
-    // Just provide a few common checkouts for demonstration
-    if (!doubleOut) {
-      if (score <= 20) return `${score}`;
-      if (score === 25) return '25';
-      if (score === 50) return 'Bull';
-      return 'Custom';
+    // Use the comprehensive getCheckoutSuggestionDetails function from dartLogic
+    const checkoutDetails = getCheckoutSuggestionDetails(score, doubleOut);
+    
+    if (checkoutDetails.isCheckout && checkoutDetails.sequence) {
+      return checkoutDetails.sequence;
     }
     
-    const checkouts: Record<number, string> = {
-      170: 'T20 T20 Bull',
-      167: 'T20 T19 Bull',
-      160: 'T20 T20 D20',
-      136: 'T20 T20 D8',
-      100: 'T20 D20',
-      50: 'Bull',
-      40: 'D20',
-      36: 'D18',
-      32: 'D16',
-    };
-    
-    return checkouts[score] || 'Possible';
+    return "No standard checkout";
   };
 
   return (

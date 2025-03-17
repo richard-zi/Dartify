@@ -7,177 +7,19 @@ import ScoreBoard from '../components/game/ScoreBoard';
 import ScoreInput from '../components/game/ScoreInput';
 import GameControls from '../components/game/GameControls';
 import Button from '../components/ui/Button';
+import PlayerStatistics from '../components/game/PlayerStatistics';
 import { GameType } from '../types';
 import { useGame } from '../contexts/GameContext';
 import { useCamera } from '../hooks/useCamera';
-import { isCheckoutRange, getCheckoutSuggestionDetails } from '../utils/dartLogic';
-
-// Create an inline statistics component to avoid the import error
-const PlayerStatistics: React.FC<{
-  players: any[];
-  winner: any;
-  gameType: GameType;
-  doubleOut: boolean;
-  onNewGame: () => void;
-  onEndGame: () => void;
-}> = ({ players, winner, gameType, doubleOut, onNewGame, onEndGame }) => {
-  // Sort players by rank (winner first, then by average)
-  const rankedPlayers = [...players].sort((a, b) => {
-    if (a.id === winner.id) return -1;
-    if (b.id === winner.id) return 1;
-    return b.average - a.average;
-  });
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Game Over</h2>
-        <p className="text-lg text-gray-600">{gameType} game completed</p>
-        
-        <div className="mt-6 flex justify-center">
-          <div className="bg-green-50 rounded-full w-24 h-24 flex items-center justify-center border-4 border-green-100">
-            <div className="text-center">
-              <div className="text-green-600">
-                <svg className="w-10 h-10 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="font-bold text-green-800 text-sm mt-1">WINNER</div>
-            </div>
-          </div>
-        </div>
-        
-        <h3 className="text-2xl font-bold text-indigo-700 mt-3">{winner.name}</h3>
-        
-        {winner.checkout && (
-          <div className="mt-3 inline-block bg-green-50 px-4 py-2 rounded-full border border-green-100">
-            <span className="text-green-800 font-medium">Checkout: </span>
-            {winner.checkout.map((score: number, i: number) => (
-              <span key={i} className="inline-block bg-green-100 px-2 py-1 rounded-full text-sm font-medium mx-1">
-                {score}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Show turns needed for checkout */}
-        {winner.turnCount !== undefined && (
-          <div className="mt-2">
-            <span className="text-gray-700">Turns to checkout: </span>
-            <span className="font-medium text-indigo-700">{winner.turnCount}</span>
-          </div>
-        )}
-      </div>
-      
-      <div className="mb-6">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Player Statistics</h3>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average</th>
-                <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Throws</th>
-                {winner.turnCount !== undefined && (
-                  <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turns</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {rankedPlayers.map((player, index) => {
-                // Calculate total darts thrown
-                const totalDarts = player.history.flat().length;
-                
-                return (
-                  <tr key={player.id} className={player.id === winner.id ? "bg-green-50" : ""}>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {index + 1}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="font-medium text-gray-900">
-                          {player.name}
-                          {player.id === winner.id && (
-                            <span className="ml-2 inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                              Winner
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-gray-900 font-medium">{player.average.toFixed(1)}</div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-gray-900">{totalDarts}</div>
-                    </td>
-                    {winner.turnCount !== undefined && (
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-gray-900">{player.id === winner.id ? player.turnCount : '-'}</div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div className="mt-8">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Game Summary</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-500">Total Rounds</div>
-            <div className="text-2xl font-bold text-gray-800">{players[0]?.history.length || 0}</div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-500">Game Type</div>
-            <div className="text-2xl font-bold text-gray-800">{gameType}</div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-500">Checkout Mode</div>
-            <div className="text-2xl font-bold text-gray-800">{doubleOut ? 'Double Out' : 'Any Finish'}</div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-500">Players</div>
-            <div className="text-2xl font-bold text-gray-800">{players.length}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-between mt-8 pt-4 border-t">
-        <Button onClick={onEndGame} variant="secondary">
-          Exit to Menu
-        </Button>
-        <Button onClick={onNewGame} variant="primary">
-          Play New Game
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 const GamePage: React.FC = () => {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
-  // Behalte den showCheckoutHint Status bei, aber reduziere die Anzeigezeit auf 2 Sekunden
-  const [showCheckoutHint, setShowCheckoutHint] = useState(false);
+  // Remove the showCheckoutHint state since we're removing the popup
   const [gamePhase, setGamePhase] = useState<'selection' | 'active' | 'statistics'>('selection');
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
   const [doubleOut, setDoubleOut] = useState<boolean>(true);
+  const [effectivelyActive, setEffectivelyActive] = useState<boolean>(false);
   
   const {
     isActive: isCameraActive,
@@ -190,10 +32,7 @@ const GamePage: React.FC = () => {
     onDetection: (score) => handleScoreSubmit(score)
   });
 
-  // Check if we have an active game
-  const isGameActive = !state.isGameOver && state.gameType !== "" as GameType;
-  
-  // Get current player
+  const isGameActive = effectivelyActive && !state.isGameOver && state.gameType !== "" as GameType;
   const currentPlayer = state.players[state.currentPlayerIndex] || null;
   
   // Update game phase based on game state
@@ -207,19 +46,7 @@ const GamePage: React.FC = () => {
     }
   }, [isGameActive, state.isGameOver, state.players.length, state.winner]);
   
-  // Check if current player is in checkout range - reduziere auf 2 Sekunden Anzeigezeit
-  useEffect(() => {
-    if (currentPlayer && isCheckoutRange(currentPlayer.score, state.options.doubleOut)) {
-      setShowCheckoutHint(true);
-      // Hide the hint after 2 seconds instead of 3
-      const timer = setTimeout(() => {
-        setShowCheckoutHint(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowCheckoutHint(false);
-    }
-  }, [currentPlayer, state.options.doubleOut]);
+  // Remove the useEffect for the showCheckoutHint state
 
   // Handle start game
   const handleStartGame = (gameType: GameType) => {
@@ -233,33 +60,36 @@ const GamePage: React.FC = () => {
         }
       } 
     });
+    setEffectivelyActive(true);
     setGamePhase('active');
   };
 
   // Handle reset game
   const handleResetGame = () => {
     dispatch({ type: 'RESET_GAME' });
+    setEffectivelyActive(false);
     setGamePhase('selection');
   };
 
   // Handle start new game
   const handleStartNewGame = () => {
+    setEffectivelyActive(false);
     setGamePhase('selection');
   };
 
   // Handle end game
   const handleEndGame = () => {
-    navigate('/');
+    dispatch({ type: 'RESET_GAME' });
+    setEffectivelyActive(false);
+    setGamePhase('selection');
   };
 
   // Handle score submission
   const handleScoreSubmit = (score: number) => {
-    // Limit score to a single dart (max 60)
     if (score > 60) {
       score = 60;
     }
     
-    // Use simulateDetection to satisfy the TypeScript warning
     if (score === 0 && isDetecting) {
       score = simulateDetection();
     }
@@ -285,10 +115,6 @@ const GamePage: React.FC = () => {
       startCamera();
     }
   };
-  
-  // Get checkout details if available
-  const checkoutDetails = currentPlayer ? 
-    getCheckoutSuggestionDetails(currentPlayer.score, state.options.doubleOut) : null;
 
   return (
     <Layout>
@@ -458,20 +284,7 @@ const GamePage: React.FC = () => {
           </div>
         )}
         
-        {/* Checkout Hint Toast - behalte diese bei, aber ändere die Anzeigeposition */}
-        {showCheckoutHint && currentPlayer && checkoutDetails?.isCheckout && (
-          <div className="fixed bottom-4 right-4 bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-3 rounded shadow-md z-50">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <div>
-                <p className="font-bold">Checkout possible!</p>
-                <p>{checkoutDetails.sequence}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* CHECKOUT POPUP REMOVED */}
         
         {/* Main Game Interface */}
         {gamePhase === 'active' && (
