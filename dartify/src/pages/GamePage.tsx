@@ -19,6 +19,7 @@ const GamePage: React.FC = () => {
   const [selectedGameType, setSelectedGameType] = useState<GameType>("501");
   const [doubleOut, setDoubleOut] = useState<boolean>(true);
   const [effectivelyActive, setEffectivelyActive] = useState<boolean>(false);
+  const [isProcessingScore, setIsProcessingScore] = useState<boolean>(false);
   
   const {
     isActive: isCameraActive,
@@ -74,27 +75,52 @@ const GamePage: React.FC = () => {
     setGamePhase('selection');
   };
 
-  // Handle score submission
+  // Handle score submission with debouncing to prevent multiple rapid submissions
   const handleScoreSubmit = (score: number) => {
+    if (isProcessingScore || !isGameActive) return;
+    
+    setIsProcessingScore(true);
+    
+    // Limit score to valid range
     if (score > 60) {
       score = 60;
     }
     
+    // Handle camera simulation
     if (score === 0 && isDetecting) {
       score = simulateDetection();
     }
     
     dispatch({ type: 'ADD_SCORE', payload: { score } });
+    
+    // Reset processing flag after a short delay
+    setTimeout(() => {
+      setIsProcessingScore(false);
+    }, 300);
   };
 
   // Handle undo throw
   const handleUndoThrow = () => {
+    if (isProcessingScore) return;
+    setIsProcessingScore(true);
+    
     dispatch({ type: 'UNDO_THROW' });
+    
+    setTimeout(() => {
+      setIsProcessingScore(false);
+    }, 300);
   };
 
   // Handle next player
   const handleNextPlayer = () => {
+    if (isProcessingScore) return;
+    setIsProcessingScore(true);
+    
     dispatch({ type: 'NEXT_PLAYER' });
+    
+    setTimeout(() => {
+      setIsProcessingScore(false);
+    }, 300);
   };
   
   // Handle camera toggle
@@ -286,7 +312,6 @@ const GamePage: React.FC = () => {
                 doubleOut={state.options.doubleOut}
               />
               
-              
               {/* Camera Feed */}
               <div className="mt-6">
                 <h2 className="text-xl font-bold mb-3 text-gray-800">Camera</h2>
@@ -302,7 +327,7 @@ const GamePage: React.FC = () => {
             {/* Right Column - Controls */}
             <div>
               <div className="space-y-6">
-                {/* Game Controls - REMOVED onResetGame prop */}
+                {/* Game Controls */}
                 <GameControls 
                   onEndGame={handleEndGame}
                   isGameActive={isGameActive}

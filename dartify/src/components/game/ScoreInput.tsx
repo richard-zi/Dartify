@@ -71,8 +71,19 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
     }
   };
 
+  // Prevent multiple rapid clicks 
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   const handleQuickScoreClick = (score: number) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     onScoreSubmit(score);
+    
+    // Reset processing flag after a short delay
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 300);
   };
 
   // Determine if we're in checkout range and highlight it
@@ -108,7 +119,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
             className="border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
             autoFocus
           />
-          <Button type="submit" variant="primary">
+          <Button type="submit" variant="primary" disabled={isProcessing}>
             Enter
           </Button>
         </div>
@@ -132,6 +143,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
                   key={`checkout-${idx}-${option.value}`}
                   onClick={() => handleQuickScoreClick(option.value)}
                   className="bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-sm text-green-800 border border-green-200 transition-colors"
+                  disabled={isProcessing}
                 >
                   {option.label}
                 </button>
@@ -167,6 +179,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
               key={score.value}
               onClick={() => handleQuickScoreClick(score.value)}
               className="bg-gray-50 hover:bg-gray-100 px-2 py-2 rounded text-sm font-medium border border-gray-100 transition-colors"
+              disabled={isProcessing}
             >
               {score.label}
             </button>
@@ -179,12 +192,14 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
         <Button 
           onClick={onUndoThrow} 
           variant="secondary"
+          disabled={isProcessing}
         >
           Undo
         </Button>
         <Button 
           onClick={onNextPlayer} 
           variant="primary"
+          disabled={isProcessing}
         >
           Next Player
         </Button>
